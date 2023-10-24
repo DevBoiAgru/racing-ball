@@ -27,6 +27,7 @@ def player_move():
     ball_vars["y_speed"] += ball_vars["self_gravity"]
     ball_vars["x"] += ball_vars["x_speed"]
     ball_vars["y"] += ball_vars["y_speed"]
+    ball_vars["iframes_left"] -= 1
 
 def create_particles(tag, amount, pos, max_speed, fall_acc, color, max_age, radius):
     for _ in range(random.randint(int(amount/2), amount)):
@@ -68,8 +69,6 @@ def check_player_collision():
             create_particles(
                 None, 4, {"x": ball_vars["x"], "y": ball_vars["y"]}, 3, 0.12, (255, 255, 255), 36, 5)
 
-# Ball dash, uses fuel but adds speed
-can_dash = True
 def dash_update():
     global can_dash
     speed_multiplier = 3 # How much of a speed boost the dash gives
@@ -80,6 +79,7 @@ def dash_update():
         ball_vars["y_speed"] = default_speed[1] * speed_multiplier
         ball_vars["fuel"] = ball_vars["fuel"] - 3
         create_particles("create_subparticles", 20, {"x": ball_vars["x"], "y": ball_vars["y"]}, 3, 0.12, (100, 100, 255), 36, 5)
+        ball_vars["iframes_left"] = 20
         can_dash = False
 
 def particle_update():
@@ -100,7 +100,6 @@ def particle_update():
                                     max(int(particle["color"][2] - particle["color"][2] * (particle["age"] / particle["max_age"] * 2.0)), 0)),
                                     (particle["x"], particle["y"]), particle["radius"] - particle["radius"] * (particle["age"] / particle["max_age"]))
 
-
 def ball_trail_update():
     if ball_vars["alive"] and ball_vars["accelerating"]: ball_trail_list.append({"x": ball_vars["x"], "y": ball_vars["y"], "age": 0, "active": True})
     elif ball_vars["alive"] and not ball_vars["accelerating"]: ball_trail_list.append({"x": ball_vars["x"], "y": ball_vars["y"], "age": 0, "active": False})
@@ -116,19 +115,18 @@ def image(name):
     image_path = os.path.join(script_directory, name)
     return pygame.image.load(image_path)
 
-def check_goal(max_enemy_fuel):
-    global score
+def check_goal():
+    global score; global max_enemy_fuel
     if (abs(ball_vars["x"] - goal_vars["x"]) < ball_vars["radius"] + goal_vars["radius"]) and (abs(ball_vars["y"] - goal_vars['y']) < ball_vars["radius"] + goal_vars["radius"]):
         create_particles("create_subparticles", 12, {"x": goal_vars["x"], "y": goal_vars["y"]}, 3, 0.07, (255, 255, 0), 50, 6)
         goal_vars["x"] = random.randint(10, WIDTH)
         goal_vars["y"] = random.randint(10, HEIGHT)
         ball_vars["fuel"] = min(60, ball_vars["fuel"] + 6.3)
         score += 127
-        max_enemy_fuel *= 1.13
-    return max_enemy_fuel
+        max_enemy_fuel *= 1.125
 
-def create_enemies(max_enemy_fuel):
-    global enemy_timer
+def create_enemies():
+    global enemy_timer; global max_enemy_fuel
     enemy_timer -= 1/60
     if enemy_timer <= 0 and ball_vars["alive"]:
         enemy_timer = 6
@@ -195,19 +193,20 @@ def check_enemies():
     global score
     player_speed = sqrt(ball_vars["x_speed"]**2 + ball_vars["y_speed"]**2)
     for enemy in enemy_list:
-        if (abs(ball_vars["x"] - enemy["x"]) < ball_vars["radius"] + enemy["radius"]) and (abs(ball_vars["y"] - enemy['y']) < ball_vars["radius"] + enemy["radius"]) and enemy["alive"]:
+        if ((abs(ball_vars["x"] - enemy["x"]) < ball_vars["radius"] + enemy["radius"]) and (abs(ball_vars["y"] - enemy['y']) < ball_vars["radius"] + enemy["radius"]) and enemy["alive"]) and ball_vars["iframes_left"] <= 0:
             if player_speed > 10:
                 enemy["alive"] = False
                 create_particles(None, 8, {"x": enemy["x"], "y": enemy["y"]}, 4, 0, (20, 52, 100), 50, 5)
                 ball_vars["x_speed"] *= -0.2
                 ball_vars["y_speed"] *= -0.2
-                ball_vars["fuel"] += 9.9
+                ball_vars["fuel"] += 12.5
                 score += 357
             else:
                 ball_vars["fuel"] /= 1.33
                 if ball_vars["alive"]:
                     create_particles(None, 10, {"x": ball_vars["x"], "y": ball_vars["y"]}, 4, 0.15, (255, 255 ,255), 60, 5)
                     score -= 42
+                    ball_vars["iframes_left"] = 30
             
 global WIDTH, HEIGHT; WIDTH, HEIGHT = 1280, 720
 window = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -219,12 +218,13 @@ goal_sprite = image("assets/goal.png")
 enemy_sprite = image("assets/enemy.png")
 enemy_dead_sprite = image("assets/enemy_dead.png")
 
-ball_vars = {"x": WIDTH/2, "y": HEIGHT/2, "fuel": 30, "x_speed": 0, "y_speed": 0, "x_acc": 0.2, "y_acc": 0.5, "self_gravity": 0.2, "alive": True, "radius": 6, "accelerating": False}
+ball_vars = {"x": WIDTH/2, "y": HEIGHT/2, "fuel": 30, "x_speed": 0, "y_speed": 0, "x_acc": 0.2, "y_acc": 0.5, "self_gravity": 0.2, "alive": True, "radius": 6, "accelerating": False, "iframes_left": 0}
 goal_vars = {"x": random.randint(10, HEIGHT-10), "y": random.randint(10, HEIGHT-10), "radius": 12}
-fuel_consumption = 1/400
+fuel_consumption = 1/360
+can_dash = True
 enemy_list = []
 global enemy_timer; enemy_timer = 1
-max_enemy_fuel = 4
+global max_enemy_fuel; max_enemy_fuel = 4
 particle_list = []
 ball_trail_list = []
 global score; score = 0
@@ -233,8 +233,6 @@ clock = pygame.time.Clock()
 font = pygame.font.SysFont("Courier New", 18)
 
 running = True
-
-
 
 while running:
     for event in pygame.event.get():
@@ -249,22 +247,19 @@ while running:
     if ball_vars["fuel"] <= 0: ball_vars["alive"] = False
     else: ball_vars["alive"] = True
 
-    # Check if dash is available
     if can_dash:
         dash_update()
         last_dash = time.perf_counter()
     else:
-        if time.perf_counter() - last_dash > 1.5: # Dash regen time
+        if time.perf_counter() - last_dash > 1.5:
             can_dash = True
-        else:
-            pass
 
     player_move()
     check_player_collision()
-    max_enemy_fuel = check_goal(max_enemy_fuel)
+    check_goal()
     update_enemies()
     check_enemies()
-    create_enemies(max_enemy_fuel)
+    create_enemies()
     
     strings = [
          "║",
@@ -276,6 +271,7 @@ while running:
         f'╠═[ f ]═[ {max(round(ball_vars["fuel"], 1), 0)} ] ← !',
         f'╠═[ X ]═[ {round(ball_vars["x_speed"], 2)} ]',
         f'╠═[ Y ]═[ {-round(ball_vars["y_speed"], 2)} ]',
+        f'╠═[ i ]═[ {max(ball_vars["iframes_left"], 0)} ]',
         f'╠═[ E ]═[ {len(enemy_list)} ]',
         f'╠═[ e ]═[ {round(enemy_timer, 2)} ]',
         f'╠═[ m ]═[ {round(max_enemy_fuel, 1)} ]',
@@ -304,6 +300,8 @@ pygame.quit()
 TODO improve the visual effects
 TODO add a simple background instead of the black void
 TODO refactor the code to make it more readable
-DONE - add ability to dash (costs fuel, adds a lot of speed)
 TODO enlarge balls
+TODO add sfx and music
+TODO improve gameplay (somehow idk)
+TODO make the game more pixel-y
 """

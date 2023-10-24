@@ -1,2 +1,2 @@
 # racing-ball
-You are a ball (the white one), your task is to collect fuel by touching yellow balls and avoid red balls (or just go fast at them). 
+you are a white orb, your task is to survive for as long as possible by collecting fuel (yellow orbs) and avoiding enemies (red orbs) or dashing at them
