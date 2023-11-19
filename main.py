@@ -3,7 +3,10 @@ import pygame
 from math import sqrt
 import os
 import time
+
 pygame.init()
+pygame.mixer.init()
+
 
 def player_move():
     keys_pressed = pygame.key.get_pressed()
@@ -42,6 +45,8 @@ def check_player_collision():
         if ball_vars["x_speed"] < -0.4:
             create_particles(
                 None, 4, {"x": ball_vars["x"], "y": ball_vars["y"]}, 3, 0.12, (255, 255, 255), 36, 5)
+            sfx_bounce.play()
+            
 
     # left border
     if ball_vars["x"]  < ball_vars["radius"]:
@@ -50,6 +55,8 @@ def check_player_collision():
         if ball_vars["x_speed"] > 0.4:
             create_particles(
                 None, 4, {"x": ball_vars["x"], "y": ball_vars["y"]}, 3, 0.12, (255, 255, 255), 36, 5)
+            sfx_bounce.play()
+            
 
     # top border
     if ball_vars["y"]  < ball_vars["radius"]:
@@ -58,6 +65,7 @@ def check_player_collision():
         if ball_vars["y_speed"] > 0.4:
             create_particles(
                 None, 4, {"x": ball_vars["x"], "y": ball_vars["y"]}, 3, 0.12, (255, 255, 255), 36, 5)
+            sfx_bounce.play()
 
     # bottom border
     if ball_vars["y"]  > HEIGHT - ball_vars["radius"]:
@@ -68,6 +76,7 @@ def check_player_collision():
         if ball_vars["y_speed"] < -0.4:
             create_particles(
                 None, 4, {"x": ball_vars["x"], "y": ball_vars["y"]}, 3, 0.12, (255, 255, 255), 36, 5)
+            sfx_bounce.play()
 
 def dash_update():
     global can_dash
@@ -80,7 +89,22 @@ def dash_update():
         ball_vars["fuel"] = ball_vars["fuel"] - 3
         create_particles("create_subparticles", 20, {"x": ball_vars["x"], "y": ball_vars["y"]}, 3, 0.12, (100, 100, 255), 36, 5)
         ball_vars["iframes_left"] = 20
+        sfx_dash.play()
+        
         can_dash = False
+
+def draw_floatertext(text :str = "Lorem ipsum", size :int = 20, duration :int = 2, position :tuple = (0,0), color :tuple = (100,100,100)):
+    global floating_text, floating_end
+
+    fontrender = pygame.font.SysFont("courier", size)
+    rend = fontrender.render(text, False, color)
+    floating_text = (rend, position)
+    floating_end = pygame.time.get_ticks() + duration*1000 # 1000 milliseconds = 1 second
+
+
+def update_floatertext():
+    if floating_text and pygame.time.get_ticks() < floating_end: 
+        window.blit(floating_text[0], floating_text[1])
 
 def particle_update():
     for particle in particle_list:
@@ -123,12 +147,15 @@ def check_goal():
         goal_vars["y"] = random.randint(10, HEIGHT)
         ball_vars["fuel"] = min(60, ball_vars["fuel"] + 6.3)
         score += 127
+        draw_floatertext(f"+{127}", 20, 2, (ball_vars["x"], ball_vars["y"]), (100,100,100))
+        sfx_explosion.play()
         max_enemy_fuel *= 1.125
 
 def create_enemies():
     global enemy_timer; global max_enemy_fuel
     enemy_timer -= 1/60
     if enemy_timer <= 0 and ball_vars["alive"]:
+        sfx_enemyspawn.play()
         enemy_timer = 6
         enemy_list.append({"x": 500, "y": 500, "x_speed": 0, "y_speed": 0, "x_acc": 0.1, "y_acc": 0.25, "fall_acc": 0.2, "radius": 6, "fuel": round(max_enemy_fuel, 0), "alive": True, "done": False})
         create_particles(None, 14, {"x": enemy_list[-1]["x"], "y": enemy_list[-1]["y"]}, 4, 0, (200, 0, 0), 50, 5)
@@ -141,8 +168,10 @@ def update_enemies():
             enemy["alive"] = False
             if enemy["done"] == False:
                 create_particles(None, 8, {"x": enemy["x"], "y": enemy["y"]}, 4, 0, (20, 52, 100), 50, 5)
+                sfx_enemydead.play()
                 enemy["done"] = True
                 score += 49
+                draw_floatertext(f"+{49}", 20, 2, (ball_vars["x"], ball_vars["y"]), (100,100,100))
            
         if (ball_vars["x"] - enemy["x"] < enemy["radius"] + ball_vars["radius"]) and enemy["alive"]:
            enemy["x_speed"] -= enemy["x_acc"]
@@ -171,21 +200,29 @@ def check_enemy_collision():
     # right border
         if enemy["x"]  > WIDTH - enemy["radius"]:
             enemy["x"] = WIDTH - enemy["radius"]
+            if abs(enemy["x_speed"]) > 0.5:
+                sfx_bounce.play()
             enemy["x_speed"] *= -0.6
 
         # left border
         if enemy["x"] < enemy["radius"]:
            enemy["x"] = enemy["radius"]
+           if abs(enemy["x_speed"]) > 0.5:
+                sfx_bounce.play() 
            enemy["x_speed"] *= -0.6
 
        # top border
         if enemy["y"] < enemy["radius"]:
            enemy["y"] = enemy["radius"]
+           if abs(enemy["y_speed"]) > 0.5:
+                sfx_bounce.play()
            enemy["y_speed"] *= -0.6
 
       # bottom border
         if enemy["y"]  > HEIGHT - enemy["radius"]*2:
             enemy["y"] = HEIGHT - enemy["radius"]*2
+            if abs(enemy["y_speed"]) > 0.5:
+                sfx_bounce.play()
             enemy["y_speed"] *= -0.6
             enemy["x_speed"] *= 0.99
 
@@ -195,19 +232,24 @@ def check_enemies():
     for enemy in enemy_list:
         if ((abs(ball_vars["x"] - enemy["x"]) < ball_vars["radius"] + enemy["radius"]) and (abs(ball_vars["y"] - enemy['y']) < ball_vars["radius"] + enemy["radius"]) and enemy["alive"]) and ball_vars["iframes_left"] <= 0:
             if player_speed > 10:
-                enemy["alive"] = False
+                enemy["alive"] = False  
                 create_particles(None, 8, {"x": enemy["x"], "y": enemy["y"]}, 4, 0, (20, 52, 100), 50, 5)
+                sfx_enemydead.play()
                 ball_vars["x_speed"] *= -0.2
                 ball_vars["y_speed"] *= -0.2
                 ball_vars["fuel"] += 12.5
                 score += 357
+                draw_floatertext(f"+{357}", 20, 2, (ball_vars["x"], ball_vars["y"]), (100,100,100))
             else:
                 ball_vars["fuel"] /= 1.33
                 if ball_vars["alive"]:
+                    sfx_hit.play()  
                     create_particles(None, 10, {"x": ball_vars["x"], "y": ball_vars["y"]}, 4, 0.15, (255, 255 ,255), 60, 5)
                     score -= 42
+                    draw_floatertext(f"-{42}", 20, 2, (ball_vars["x"], ball_vars["y"]), (100,100,100))
+
                     ball_vars["iframes_left"] = 30
-            
+
 global WIDTH, HEIGHT; WIDTH, HEIGHT = 1280, 720
 window = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Ball game")
@@ -228,6 +270,20 @@ global max_enemy_fuel; max_enemy_fuel = 4
 particle_list = []
 ball_trail_list = []
 global score; score = 0
+show_floating_text_for = 0
+
+# Floating text
+floating_text = None    # Set text to none because we don't need any text at startup
+floating_end = 0        # Default kill time for the text. This is overwritten when the function is called
+
+# Initialize audios
+
+sfx_bounce     =  pygame.mixer.Sound("assets/bounce.wav")
+sfx_dash       =  pygame.mixer.Sound("assets/dash.wav")
+sfx_enemydead  =  pygame.mixer.Sound("assets/enemydead.wav")
+sfx_enemyspawn =  pygame.mixer.Sound("assets/enemyspawn.wav")
+sfx_explosion  =  pygame.mixer.Sound("assets/explosion.wav")
+sfx_hit        =  pygame.mixer.Sound("assets/hit.wav")
 
 clock = pygame.time.Clock()
 font = pygame.font.SysFont("Courier New", 18)
@@ -235,6 +291,7 @@ font = pygame.font.SysFont("Courier New", 18)
 running = True
 
 while running:
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
@@ -260,7 +317,8 @@ while running:
     update_enemies()
     check_enemies()
     create_enemies()
-    
+    update_floatertext()
+
     strings = [
          "║",
          '╠═[ COLLECT YELLOW ORBS FOR FUEL ]',
@@ -301,7 +359,8 @@ TODO improve the visual effects
 TODO add a simple background instead of the black void
 TODO refactor the code to make it more readable
 TODO enlarge balls
-TODO add sfx and music
 TODO improve gameplay (somehow idk)
 TODO make the game more pixel-y
+------------------------------------
+DOING add sfx and music
 """
