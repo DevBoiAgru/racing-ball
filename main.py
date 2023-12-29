@@ -1,6 +1,6 @@
 import random
 import pygame
-from math import sqrt
+import math
 import os
 import time
 
@@ -230,7 +230,7 @@ def check_enemy_collision():
 
 def check_enemies():
     global score
-    player_speed = sqrt(ball_vars["x_speed"]**2 + ball_vars["y_speed"]**2)
+    player_speed = math.sqrt(ball_vars["x_speed"]**2 + ball_vars["y_speed"]**2)
     for enemy in enemy_list:
         if ((abs(ball_vars["x"] - enemy["x"]) < ball_vars["radius"] + enemy["radius"]) and (abs(ball_vars["y"] - enemy['y']) < ball_vars["radius"] + enemy["radius"]) and enemy["alive"]) and ball_vars["iframes_left"] <= 0:
             if player_speed > 10:
@@ -276,15 +276,13 @@ def respawn():
     ball_vars["x"] = WIDTH/2
     ball_vars["y"] = HEIGHT/2
 
-def Dead():
-    dead_font = pygame.font.SysFont("courier", 50)
-    respawn_text = dead_font.render("Dead. Press 'R' to respawn", False, (100, 100, 100))
-    window.blit(respawn_text, (WIDTH/2 - 400, HEIGHT/2))
 
-global WIDTH, HEIGHT; WIDTH, HEIGHT = 1280, 720
+
+global WIDTH, HEIGHT; WIDTH, HEIGHT = 1080, 720
 window = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("I wokup inanu bugatti")
 
+ball_sprite        = pygame.image.load("assets/ball.png")
 ball_sprite        = pygame.image.load("assets/ball.png")
 ball_active_sprite = pygame.image.load("assets/ball_active.png")
 goal_sprite        = pygame.image.load("assets/goal.png")
@@ -292,6 +290,10 @@ enemy_sprite       = pygame.image.load("assets/enemy.png")
 enemy_dead_sprite  = pygame.image.load("assets/enemy_dead.png")
 destroyed_goal_sprite = pygame.image.load("assets/goal_destroyed.png")
 mine_sprite        = pygame.image.load("assets/mine.png")
+
+# Background
+bgscale = 0.185 # How big the background is
+bgimage            = pygame.transform.scale_by(pygame.image.load("assets/brick-wall.jpg"), bgscale)
 
 ball_vars = {"x": WIDTH/2, "y": HEIGHT/2, "fuel": 30, "x_speed": 0, "y_speed": 0, "x_acc": 0.2, "y_acc": 0.5, "self_gravity": 0.2, "alive": True, "radius": 6, "accelerating": False, "iframes_left": 0}
 goal_vars = {"x": random.randint(10, HEIGHT-10), "y": random.randint(10, HEIGHT-10), "radius": 12}
@@ -310,6 +312,8 @@ mine = {"x": -500, "y": -8000, "timer": -1}
 # Floating text
 floating_text = None    # Set text to none because we don't need any text at startup
 floating_end = 0        # Default kill time for the text. This is overwritten when the function is called
+dead_font = pygame.font.SysFont("courier", 50)
+respawn_text = dead_font.render("Dead. Press 'R' to respawn", False, (100, 100, 100))
 
 # Initialize audios
 sfx_bounce     = pygame.mixer.Sound("assets/bounce.wav")
@@ -334,13 +338,16 @@ while running:
             running = False
             break
 
-    window.fill((0, 0, 0))
+    # window.fill((0, 0, 0)) # Do we still need this?
+
+    # Blit background
+    window.blit(bgimage, (0,0))
 
     ball_vars["accelerating"] = False
     ball_vars["fuel"] -= fuel_consumption
     if ball_vars["fuel"] <= 0: 
         ball_vars["alive"] = False
-        Dead()
+        window.blit(respawn_text, (WIDTH/2 - 400, HEIGHT/2))
         music.stop()
     else: 
         ball_vars["alive"] = True
@@ -358,9 +365,13 @@ while running:
     check_goal()
     update_enemies()
     check_enemies()
-    create_enemies()
+    create_enemies()    
     check_mine()
     update_floatertext()
+
+    # Simple scoreboard
+    scoretext = font.render(f"Score: {score}", False, (100,100,100))
+    window.blit(pygame.transform.scale_by(scoretext, 1.2),(WIDTH-150, 50))
 
     # strings = [
     # ]
@@ -379,10 +390,10 @@ while running:
     t7=    f'╠═[ i ]═[ {max(ball_vars["iframes_left"], 0)} ]'
     t8=    f'╠═[ E ]═[ {len(enemy_list)} ]'
     t9=    f'╠═[ e ]═[ {round(enemy_timer, 2)} ]'
-    t10=    f'╠═[ m ]═[ {round(max_enemy_fuel, 1)} ]'
-    t11=    f'╠═[ S ]═[ {score} ]'
-    t12=    f'╠═[ p ]═[ {len(particle_list)} ]'
-    t13=     '╝ '
+    t10=   f'╠═[ m ]═[ {round(max_enemy_fuel, 1)} ]'
+    t11=   f'╠═[ S ]═[ {score} ]'
+    t12=   f'╠═[ p ]═[ {len(particle_list)} ]'
+    t13=    '╝ '
     text1 = font.render(t1, False, (100, 100, 100))
     window.blit(text1, (0, 20 * (1) - 20))
     text2 = font.render(t2, False, (100, 100, 100))
@@ -430,13 +441,13 @@ TODO add scoreboard
 TODO add kill combo bonuses
 TODO add a bossfight (fish boss real)
 TODO improve the visual effects
-TODO add a simple background instead of the black void
 TODO improve ball handling
 TODO fix the mine explosion behaving weirdly
 ------------------------------------
 DOING refactor the code to make it more readable
-DOING add variety to gameplay (somehow idk)
+DOING add variety to gameplay (somehow idk) 
 ------------------------------------
+DONE add a simple background instead of the black void
 DONE add sfx and music
 DONE add a way to respawn LIKE WHY DIDN'T WE ADD THIS BEFORE
 """
