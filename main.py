@@ -272,14 +272,16 @@ def respawn():
     ball_vars["x"] = WIDTH/2
     ball_vars["y"] = HEIGHT/2
 
+fps_string = ""
 def check_fps():
+    global fps_string
     global last_fps_check_time
     current_time = time.time()
     time_delta = current_time - last_fps_check_time
     fps = 1/time_delta
     fps_list.append(fps)
     if len(fps_list) > 256: fps_list.pop(0)
-    draw_floatertext(f"time since last frame: {round(time_delta, 3)} ({round(fps, 1)} fps; {round(sum(fps_list)/256, 1)} average; {round(max(fps_list), 1)} max; {round(min(fps_list), 1)} min)", 20, 1/fps, (300, 10), (255, 255, 255))
+    fps_string = f"time since last frame: {round(time_delta, 3)} ({round(fps, 1)} fps; {round(sum(fps_list)/256, 1)} average; {round(max(fps_list), 1)} max; {round(min(fps_list), 1)} min)"
     last_fps_check_time = current_time
 
 
@@ -380,7 +382,12 @@ while running:
     scoretext = font.render(f"Score: {score}", False, (100,100,100))
     window.blit(pygame.transform.scale_by(scoretext, 1.2),(WIDTH-150, 50))
 
+    # Frame rate information
+    fpstext = font.render(fps_string, False, (255,255,255))
+    window.blit(fpstext, (300, 10))
+
     # Devboi do not fucking remove this loop or i will beat your skull into dust with a lead pipe
+    # I will.
     strings = [
          "║║        ║ ╚═╗       ║",
          '║║[ YELLOW IS FUEL ]  ║',
