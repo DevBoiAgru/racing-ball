@@ -2,6 +2,7 @@ import random
 import pygame
 import math
 import time
+import numpy as np
 
 pygame.init()
 pygame.mixer.init()
@@ -282,6 +283,7 @@ def check_fps():
     fps_list.append(fps)
     if len(fps_list) > 256: fps_list.pop(0)
     fps_string = f"time since last frame: {round(time_delta, 3)} ({round(fps, 1)} fps; {round(sum(fps_list)/256, 1)} average; {round(max(fps_list), 1)} max; {round(min(fps_list), 1)} min)"
+    # fps_string = f"time since last frame: {round(time_delta, 3)} ({round(fps, 1)} fps; {round(np.mean(fps_list), 1)} average; {round(max(fps_list), 1)} max; {round(min(fps_list), 1)} min)"
     last_fps_check_time = current_time
 
 
@@ -427,7 +429,7 @@ while running:
 pygame.quit()
 
 """
-TODO add scoreboard5
+TODO add scoreboard
 TODO add kill combo bonuses
 TODO add a way to respawn LIKE WHY DIDN'T WE ADD THIS BEFORE
 TODO add a bossfight (fish boss real)
