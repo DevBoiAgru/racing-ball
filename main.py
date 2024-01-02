@@ -1,7 +1,6 @@
 import random
 import pygame
 import math
-import os
 import time
 
 pygame.init()
@@ -10,11 +9,11 @@ pygame.mixer.init()
 
 def player_move():
     keys_pressed = pygame.key.get_pressed()
-    if (keys_pressed[pygame.K_UP   ] or keys_pressed[pygame.K_w]) and ball_vars["alive"]: 
+    if (keys_pressed[pygame.K_UP] or keys_pressed[pygame.K_w]) and ball_vars["alive"]: 
         ball_vars["y_speed"] -= ball_vars["y_acc"]
         ball_vars["fuel"] -= 1/40
         ball_vars["accelerating"] = True
-    if (keys_pressed[pygame.K_DOWN ] or keys_pressed[pygame.K_s]) and ball_vars["alive"]: 
+    if (keys_pressed[pygame.K_DOWN] or keys_pressed[pygame.K_s]) and ball_vars["alive"]: 
         ball_vars["y_speed"] += ball_vars["y_acc"]
         ball_vars["fuel"] -= 1/40
         ball_vars["accelerating"] = True
@@ -22,7 +21,7 @@ def player_move():
         ball_vars["x_speed"] += ball_vars["x_acc"]
         ball_vars["fuel"] -= 1/40
         ball_vars["accelerating"] = True
-    if (keys_pressed[pygame.K_LEFT ] or keys_pressed[pygame.K_a]) and ball_vars["alive"]: 
+    if (keys_pressed[pygame.K_LEFT] or keys_pressed[pygame.K_a]) and ball_vars["alive"]: 
         ball_vars["x_speed"] -= ball_vars["x_acc"]
         ball_vars["fuel"] -= 1/40
         ball_vars["accelerating"] = True
@@ -35,7 +34,6 @@ def player_move():
         ball_vars["fuel"] = 9002
     if (keys_pressed[pygame.K_r]) and not ball_vars["alive"]:
         respawn()
-
 
     ball_vars["y_speed"] += ball_vars["self_gravity"]
     ball_vars["x"] += ball_vars["x_speed"]
@@ -57,7 +55,6 @@ def check_player_collision():
                 None, 4, {"x": ball_vars["x"], "y": ball_vars["y"]}, 3, 0.12, (255, 255, 255), 36, 5)
             sfx_bounce.play()
             
-
     # left border
     if ball_vars["x"]  < ball_vars["radius"]:
         ball_vars["x"] = ball_vars["radius"]
@@ -67,7 +64,6 @@ def check_player_collision():
                 None, 4, {"x": ball_vars["x"], "y": ball_vars["y"]}, 3, 0.12, (255, 255, 255), 36, 5)
             sfx_bounce.play()
             
-
     # top border
     if ball_vars["y"]  < ball_vars["radius"]:
         ball_vars["y"] = ball_vars["radius"]
@@ -90,9 +86,9 @@ def check_player_collision():
 
 def dash_update():
     global can_dash
-    speed_multiplier = 4 # How much of a speed boost the dash gives
+    speed_multiplier = 2.75 # How much of a speed boost the dash gives
     keys_pressed = pygame.key.get_pressed()
-    if (keys_pressed[pygame.K_LSHIFT]) and ball_vars["alive"] and ball_vars["fuel"] > 3:
+    if (keys_pressed[pygame.K_LSHIFT]) and ball_vars["alive"]:
         ball_vars["x_speed"] *= speed_multiplier
         ball_vars["y_speed"] *= speed_multiplier
         ball_vars["fuel"] = ball_vars["fuel"] - 3
@@ -103,7 +99,6 @@ def dash_update():
 
 def draw_floatertext(text :str = "Lorem ipsum", size :int = 20, duration :int = 2, position :tuple = (0,0), color :tuple = (100,100,100)):
     global floating_text, floating_end
-
     fontrender = pygame.font.SysFont("courier", size)
     rend = fontrender.render(text, False, color)
     floating_text = (rend, position)
@@ -147,6 +142,7 @@ def check_goal():
     if goal_destroyed["y"] > HEIGHT:
         goal_destroyed["y_speed"] = 0
     goal_destroyed["y"] += goal_destroyed["y_speed"]
+    create_particles(None, 1, {"x": goal_destroyed["x"]+12, "y": goal_destroyed["y"]+12}, 0, -0.05, (90, 90, 90), 60, 4)
 
     if (abs(ball_vars["x"] - goal_vars["x"]) < ball_vars["radius"] + goal_vars["radius"]) and (abs(ball_vars["y"] - goal_vars['y']) < ball_vars["radius"] + goal_vars["radius"]):
         create_particles("create_subparticles", 12, {"x": goal_vars["x"], "y": goal_vars["y"]}, 3, 0.07, (255, 255, 0), 50, 6)
@@ -167,7 +163,7 @@ def create_enemies():
     if enemy_timer <= 0 and ball_vars["alive"]:
         sfx_enemyspawn.play()
         enemy_timer = 6
-        enemy_list.append({"x": 500, "y": 500, "x_speed": 0, "y_speed": 0, "x_acc": 0.1, "y_acc": 0.25, "fall_acc": 0.2, "radius": 6, "fuel": round(max_enemy_fuel, 0), "alive": True, "done": False})
+        enemy_list.append({"x": 500, "y": 500, "x_speed": 0, "y_speed": 0, "x_acc": 0.2, "y_acc": 1/3, "fall_acc": 0.2, "radius": 6, "fuel": round(max_enemy_fuel, 0), "alive": True, "done": False})
         create_particles(None, 14, {"x": enemy_list[-1]["x"], "y": enemy_list[-1]["y"]}, 4, 0, (200, 0, 0), 50, 5)
 
 def update_enemies():
@@ -233,7 +229,7 @@ def check_enemies():
     player_speed = math.sqrt(ball_vars["x_speed"]**2 + ball_vars["y_speed"]**2)
     for enemy in enemy_list:
         if ((abs(ball_vars["x"] - enemy["x"]) < ball_vars["radius"] + enemy["radius"]) and (abs(ball_vars["y"] - enemy['y']) < ball_vars["radius"] + enemy["radius"]) and enemy["alive"]) and ball_vars["iframes_left"] <= 0:
-            if player_speed > 10:
+            if player_speed > 20:
                 enemy["alive"] = False  
                 create_particles(None, 8, {"x": enemy["x"], "y": enemy["y"]}, 4, 0, (20, 52, 100), 50, 5)
                 sfx_enemydead.play()
@@ -263,9 +259,9 @@ def check_mine():
         sfx_beep.play()
     if mine["timer"] == 0:
         for enemy in enemy_list:
-            if ((mine["x"] - enemy["x"])**2 + (mine["y"] - enemy["y"])**2)**0.5 < 100:
+            if ((mine["x"] - enemy["x"])**2 + (mine["y"] - enemy["y"])**2)**0.5 < 133:
                 enemy["fuel"] = 0.001
-        create_particles(None, 1, {"x": mine["x"], "y": mine["y"]}, 0, 0, (255, 180, 0), 10, 100) 
+        create_particles(None, 1, {"x": mine["x"], "y": mine["y"]}, 0, 0, (255, 180, 0), 10, 133) 
         sfx_mine.play()
         mine["x"] = -500
         mine["y"] = -8000
@@ -276,9 +272,18 @@ def respawn():
     ball_vars["x"] = WIDTH/2
     ball_vars["y"] = HEIGHT/2
 
+def check_fps():
+    global last_fps_check_time
+    current_time = time.time()
+    time_delta = current_time - last_fps_check_time
+    fps = 1/time_delta
+    fps_list.append(fps)
+    if len(fps_list) > 256: fps_list.pop(0)
+    draw_floatertext(f"time since last frame: {round(time_delta, 3)} ({round(fps, 1)} fps; {round(sum(fps_list)/256, 1)} average; {round(max(fps_list), 1)} max; {round(min(fps_list), 1)} min)", 20, 1/fps, (300, 10), (255, 255, 255))
+    last_fps_check_time = current_time
 
 
-global WIDTH, HEIGHT; WIDTH, HEIGHT = 1080, 720
+global WIDTH, HEIGHT; WIDTH, HEIGHT = 1280, 720
 window = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("I wokup inanu bugatti")
 
@@ -291,26 +296,28 @@ enemy_dead_sprite  = pygame.image.load("assets/enemy_dead.png")
 destroyed_goal_sprite = pygame.image.load("assets/goal_destroyed.png")
 mine_sprite        = pygame.image.load("assets/mine.png")
 
-# Background
-bgscale = 0.185 # How big the background is
-bgimage            = pygame.transform.scale_by(pygame.image.load("assets/brick-wall.jpg"), bgscale)
+# Background, no shit sherlock
+bgscale = 1 # How big the background is, no shit sherlock
+bgimage = pygame.transform.scale_by(pygame.image.load("assets/brick-wall.jpg"), bgscale)
 
-ball_vars = {"x": WIDTH/2, "y": HEIGHT/2, "fuel": 30, "x_speed": 0, "y_speed": 0, "x_acc": 0.2, "y_acc": 0.5, "self_gravity": 0.2, "alive": True, "radius": 6, "accelerating": False, "iframes_left": 0}
+ball_vars = {"x": WIDTH/2, "y": HEIGHT/2, "fuel": 30, "x_speed": 0, "y_speed": 0, "x_acc": 1/3, "y_acc": 0.75, "self_gravity": 0.2, "alive": True, "radius": 6, "accelerating": False, "iframes_left": 0}
 goal_vars = {"x": random.randint(10, HEIGHT-10), "y": random.randint(10, HEIGHT-10), "radius": 12}
 fuel_consumption = 1/240
 can_dash = True
 enemy_list = []
 global enemy_timer; enemy_timer = 1
-global max_enemy_fuel; max_enemy_fuel = 4
+global max_enemy_fuel; max_enemy_fuel = 5
 particle_list = []
 ball_trail_list = []
 global score; score = 0
 show_floating_text_for = 0
 goal_destroyed = {"x": -500, "y": -8000, "y_speed": 0}
 mine = {"x": -500, "y": -8000, "timer": -1}
+fps_list = []
+global last_fps_check_time; last_fps_check_time = 0
 
-# Floating text
-floating_text = None    # Set text to none because we don't need any text at startup
+# Floating text, no shit sherlock
+floating_text = None    # Set text to none because we don't need any text at startup, no shit sherlock
 floating_end = 0        # Default kill time for the text. This is overwritten when the function is called
 dead_font = pygame.font.SysFont("courier", 50)
 respawn_text = dead_font.render("Dead. Press 'R' to respawn", False, (100, 100, 100))
@@ -324,7 +331,7 @@ sfx_explosion  = pygame.mixer.Sound("assets/explosion.wav")
 sfx_hit        = pygame.mixer.Sound("assets/hit.wav")
 sfx_mine       = pygame.mixer.Sound("assets/mine.wav")
 sfx_beep       = pygame.mixer.Sound("assets/beep.wav")
-music          = pygame.mixer.Sound("assets/music.wav")
+music          = pygame.mixer.Sound("assets/music.mp3")
 
 clock = pygame.time.Clock()
 font = pygame.font.SysFont("Courier New", 18)
@@ -338,9 +345,9 @@ while running:
             running = False
             break
 
-    # window.fill((0, 0, 0)) # Do we still need this?
+    # window.fill((0, 0, 0)) # Do we still need this? Lmfao no but let's keep this line for funni
 
-    # Blit background
+    # Blit background, no shit sherlock
     window.blit(bgimage, (0,0))
 
     ball_vars["accelerating"] = False
@@ -349,8 +356,7 @@ while running:
         ball_vars["alive"] = False
         window.blit(respawn_text, (WIDTH/2 - 400, HEIGHT/2))
         music.stop()
-    else: 
-        ball_vars["alive"] = True
+    else: ball_vars["alive"] = True
 
     if can_dash:
         dash_update()
@@ -359,6 +365,7 @@ while running:
         if time.perf_counter() - last_dash > 1.5:
             can_dash = True
 
+    check_fps()
     pygame.draw.circle(window, (24, 16, 0), (mine["x"], mine["y"]), 100)
     player_move()
     check_player_collision()
@@ -369,57 +376,33 @@ while running:
     check_mine()
     update_floatertext()
 
-    # Simple scoreboard
+    # Simple scoreboard no shit sherlock
     scoretext = font.render(f"Score: {score}", False, (100,100,100))
     window.blit(pygame.transform.scale_by(scoretext, 1.2),(WIDTH-150, 50))
 
-    # strings = [
-    # ]
-    # for string in strings:
-    #     text = font.render(string, False, (100, 100, 100))
-    #     window.blit(text, (0, 20 * (strings.index(string) + 1) - 20))
-
-    # Forgive me for what i am about to do
-    # Goofy optimisation. No loop is better than loop.
-    t1=     "║"
-    t2=    f'╠═[ x ]═[ {int(ball_vars["x"])} ]'
-    t3=    f'╠═[ y ]═[ {HEIGHT - int(ball_vars["y"])} ]'
-    t4=    f'╠═[ f ]═[ {max(round(ball_vars["fuel"], 1), 0)} ] ← !!'
-    t5=    f'╠═[ X ]═[ {round(ball_vars["x_speed"], 2)} ]'
-    t6=    f'╠═[ Y ]═[ {-round(ball_vars["y_speed"], 2)} ]'
-    t7=    f'╠═[ i ]═[ {max(ball_vars["iframes_left"], 0)} ]'
-    t8=    f'╠═[ E ]═[ {len(enemy_list)} ]'
-    t9=    f'╠═[ e ]═[ {round(enemy_timer, 2)} ]'
-    t10=   f'╠═[ m ]═[ {round(max_enemy_fuel, 1)} ]'
-    t11=   f'╠═[ S ]═[ {score} ]'
-    t12=   f'╠═[ p ]═[ {len(particle_list)} ]'
-    t13=    '╝ '
-    text1 = font.render(t1, False, (100, 100, 100))
-    window.blit(text1, (0, 20 * (1) - 20))
-    text2 = font.render(t2, False, (100, 100, 100))
-    window.blit(text2, (0, 20 * (2) - 20))
-    text3 = font.render(t3, False, (100, 100, 100))
-    window.blit(text3, (0, 20 * (3) - 20))
-    text4 = font.render(t4, False, (100, 100, 100))
-    window.blit(text4, (0, 20 * (4) - 20))
-    text5 = font.render(t5, False, (100, 100, 100))
-    window.blit(text5, (0, 20 * (5) - 20))
-    text6 = font.render(t6, False, (100, 100, 100))
-    window.blit(text6, (0, 20 * (6) - 20))
-    text7 = font.render(t7, False, (100, 100, 100))
-    window.blit(text7, (0, 20 * (7) - 20))
-    text8 = font.render(t8, False, (100, 100, 100))
-    window.blit(text8, (0, 20 * (8) - 20))
-    text9 = font.render(t9, False, (100, 100, 100))
-    window.blit(text9, (0, 20 * (9) - 20))
-    text10 = font.render(t10, False, (100, 100, 100))
-    window.blit(text10, (0, 20 * (10) - 20))
-    text11 = font.render(t11, False, (100, 100, 100))
-    window.blit(text11, (0, 20 * (11) - 20))
-    text12 = font.render(t12, False, (100, 100, 100))
-    window.blit(text12, (0, 20 * (12) - 20))
-    text13 = font.render(t13, False, (100, 100, 100))
-    window.blit(text13, (0, 20 * (13) - 20))
+    # Devboi do not fucking remove this loop or i will beat your skull into dust with a lead pipe
+    strings = [
+         "║║        ║ ╚═╗       ║",
+         '║║[ YELLOW IS FUEL ]  ║',
+         '║║ [ RED ARE THREAT ]═╝',
+         '║╚══[ GOAL:  SURVIVE ]',
+         '║ ',
+        f'╠═[ x ]═[ {int(ball_vars["x"])} ]',
+        f'╠═[ y ]═[ {int(ball_vars["y"])} ]',
+        f'╠═[ f ]═[ {max(round(ball_vars["fuel"], 1), 0)} ] ← !!',
+        f'╠═[ X ]═[ {round(ball_vars["x_speed"], 2)} ]',
+        f'╠═[ Y ]═[ {round(ball_vars["y_speed"], 2)} ]',
+        f'╠═[ i ]═[ {max(ball_vars["iframes_left"], 0)} ]',
+        f'╠═[ E ]═[ {len(enemy_list)} ]',
+        f'╠═[ e ]═[ {round(enemy_timer, 2)} ]',
+        f'╠═[ m ]═[ {round(max_enemy_fuel, 1)} ]',
+        f'╠═[ S ]═[ {score} ]',
+        f'╠═[ p ]═[ {len(particle_list)} ]',
+         '╝ '
+    ]
+    for string in strings:
+        text = font.render(string, False, (100, 100, 100))
+        window.blit(text, (0, 20 * (strings.index(string) + 1) - 20))
 
     window.blit(destroyed_goal_sprite, (goal_destroyed["x"], goal_destroyed["y"]))
     ball_trail_update()
@@ -437,17 +420,17 @@ while running:
 pygame.quit()
 
 """
-TODO add scoreboard
+TODO add scoreboard5
 TODO add kill combo bonuses
+TODO add a way to respawn LIKE WHY DIDN'T WE ADD THIS BEFORE
 TODO add a bossfight (fish boss real)
 TODO improve the visual effects
-TODO improve ball handling
 TODO fix the mine explosion behaving weirdly
 ------------------------------------
 DOING refactor the code to make it more readable
 DOING add variety to gameplay (somehow idk) 
 ------------------------------------
+DONE improve ball handling
 DONE add a simple background instead of the black void
 DONE add sfx and music
-DONE add a way to respawn LIKE WHY DIDN'T WE ADD THIS BEFORE
 """
