@@ -316,6 +316,7 @@ def respawn():
     max_enemy_timer = 4
     enemy_list = []
     score = 0
+    Dead = False
     music.stop()
     music.play(-1)
     LoadGame()
@@ -362,11 +363,11 @@ def SaveGame(HighScore :int) -> None:
             Log("Save folder exists, but the file does not.", "WARNING", "SaveGame")
 
         with open(f"{savepath}/save.balls", "+wb") as savefile:
-            Log("Creating log file", "UTLITIY", "SaveGame")
+            Log("Creating save file", "UTLITIY", "SaveGame")
             savefile.close()
     
     with open(f"{savepath}/save.balls", "wb") as savefile:
-        Log("Creating save file", "UTILITY", "SaveGame")
+        Log("Saving to save file", "UTILITY", "SaveGame")
         savedata = {}
         savedata["playerdata"] = {"HighScore" : HighScore}
         pickle.dump(savedata, savefile)
@@ -446,6 +447,7 @@ font = pygame.font.SysFont("Courier New", 18)
 
 running = True
 LoadGame()
+Dead = False
 music.play(-1)
 while running:
 
@@ -464,9 +466,10 @@ while running:
     if ball_vars["fuel"] <= 0: 
         ball_vars["alive"] = False
         window.blit(respawn_text, (WIDTH/2 - 400, HEIGHT/2))
-        if score > HighestScore:
+        if score > HighestScore and not Dead:
             SaveGame(score)
         music.stop()
+        Dead = True
     else: ball_vars["alive"] = True
 
     check_fps()
