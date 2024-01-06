@@ -3,6 +3,7 @@ import pygame
 import math
 import time
 import numpy as np # mf why did you import it and not even use it :skull:
+                   # I forgot to uncomment the code after comparing performance :wideskull:
 
 pygame.init()
 pygame.mixer.init()
@@ -304,8 +305,8 @@ def check_fps():
     fps = 1/time_delta
     fps_list.append(fps)
     if len(fps_list) > 256: fps_list.pop(0)
-    fps_string = f"time since last frame: {round(time_delta, 3)} ({round(fps, 1)} fps; {round(sum(fps_list)/256, 1)} average; {round(max(fps_list), 1)} max; {round(min(fps_list), 1)} min)"
-    # fps_string = f"time since last frame: {round(time_delta, 3)} ({round(fps, 1)} fps; {round(np.mean(fps_list), 1)} average; {round(max(fps_list), 1)} max; {round(min(fps_list), 1)} min)"
+    # fps_string = f"time since last frame: {round(time_delta, 3)} ({round(fps, 1)} fps; {round(sum(fps_list)/256, 1)} average; {round(max(fps_list), 1)} max; {round(min(fps_list), 1)} min)"
+    fps_string = f"time since last frame: {round(time_delta, 3)} ({round(fps, 1)} fps; {round(np.mean(fps_list), 1)} average; {round(max(fps_list), 1)} max; {round(min(fps_list), 1)} min)"
     last_fps_check_time = current_time
 
 def update_scoreboard():
@@ -467,7 +468,7 @@ TODO improve the visual effects
 TODO fix the mine explosion behaving weirdly
 TODO stylize the scoreboard
 TODO add enemy variety
-TODO add background stains (when enemies get killed, goals destroyed, dashes dashed etc.)
+TODO add background stains (when enemies get killed, goals destroyed, dashes dashed etc.) # Crazy
 ------------------------------------
 DOING refactor the code to make it more readable
 DOING add variety to gameplay (somehow idk) 
