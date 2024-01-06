@@ -332,7 +332,7 @@ def check_fps():
     fps_string = f"time since last frame: {round(time_delta, 3)} ({round(fps, 1)} fps; {round(np.mean(fps_list), 1)} average; {round(max(fps_list), 1)} max; {round(min(fps_list), 1)} min)"
     last_fps_check_time = current_time
 
-def LoadGame() -> dict:
+def LoadGame() -> None:
     try:
         with open(f"{savepath}/save.balls", "rb") as savefile:
             try:
