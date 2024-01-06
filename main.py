@@ -2,8 +2,12 @@ import random
 import pygame
 import math
 import time
+import os
+import traceback
+import pickle      # Could've used json, but that makes it easier to cheat
 import numpy as np # mf why did you import it and not even use it :skull:
                    # I forgot to uncomment the code after comparing performance :wideskull:
+from datetime import datetime
 
 pygame.init()
 pygame.mixer.init()
@@ -99,6 +103,24 @@ def check_player_collision():
             create_particles(
                 None, 4, {"x": ball_vars["x"], "y": ball_vars["y"]}, 3, 0.12, (255, 255, 255), 36, 5)
             sfx_bounce.play()
+
+def Log(text :str, category: str, location: str):
+    """ text: What is the error
+        category: Is it a warning, an error, or something else?
+        location: what part of the code is causing the error?"""
+    try:
+        with open(f"{savepath}/log.txt", "r") as logfile:
+            logfile.close()
+    except FileNotFoundError:
+        try:
+            os.mkdir(savepath)
+            with open(f"{savepath}/log.txt", "+w") as logfile:
+                pass
+        except FileExistsError:
+            with open(f"{savepath}/log.txt", "+w") as logfile:
+                pass
+    with open(f"{savepath}/log.txt", "a") as logfile:
+        logfile.write(f"[{datetime.now()}] : [{category}] : [{location}] : {text} \n")
 
 def draw_floatertext(text :str = "Lorem ipsum", size :int = 20, duration :int = 2, position :tuple = (0,0), color :tuple = (100,100,100)):
     global floating_text, floating_end
@@ -296,6 +318,7 @@ def respawn():
     score = 0
     music.stop()
     music.play(-1)
+    LoadGame()
 
 def check_fps():
     global fps_string
@@ -309,6 +332,46 @@ def check_fps():
     fps_string = f"time since last frame: {round(time_delta, 3)} ({round(fps, 1)} fps; {round(np.mean(fps_list), 1)} average; {round(max(fps_list), 1)} max; {round(min(fps_list), 1)} min)"
     last_fps_check_time = current_time
 
+def LoadGame() -> dict:
+    try:
+        with open(f"{savepath}/save.balls", "rb") as savefile:
+            try:
+                global HighestScore
+                savedata = pickle.load(savefile)
+
+                HighestScore = savedata["playerdata"]["HighScore"]
+                
+                Log ("Loading data from save file", "UTILITY", "LoadGame")
+            except Exception as e:
+                Log (f"{traceback.format_exc}", "ERROR", "LoadGame")
+                
+    except FileNotFoundError:
+        Log ("No save file found", "WARNING", "LoadGame")
+
+
+def SaveGame(HighScore :int) -> None:
+    try:
+        with open(f"{savepath}/save.balls", "rb") as savefile:
+            savefile.close()
+    except FileNotFoundError:
+        Log("Save file does not exist.", "WARNING", "SaveGame")
+        try:
+            os.mkdir(savepath)
+            Log("Creating save folder", "UTLITIY", "SaveGame")
+        except FileExistsError:
+            Log("Save folder exists, but the file does not.", "WARNING", "SaveGame")
+
+        with open(f"{savepath}/save.balls", "+wb") as savefile:
+            Log("Creating log file", "UTLITIY", "SaveGame")
+            savefile.close()
+    
+    with open(f"{savepath}/save.balls", "wb") as savefile:
+        Log("Creating save file", "UTILITY", "SaveGame")
+        savedata = {}
+        savedata["playerdata"] = {"HighScore" : HighScore}
+        pickle.dump(savedata, savefile)
+
+
 def update_scoreboard():
     i = 0
     for item in scoreboard_list: 
@@ -317,7 +380,7 @@ def update_scoreboard():
             scoreboard_list.pop(i)
 
         text = font.render(item[0], False, (100, 100, 100))
-        window.blit(text, (WIDTH-200, 75 + 15*i))
+        window.blit(text, (WIDTH-230, 95 + 15*i))
         i += 1
 
 global WIDTH, HEIGHT; WIDTH, HEIGHT = 1280, 720
@@ -342,7 +405,7 @@ goal_vars = {"x": random.randint(10, HEIGHT-10), "y": random.randint(10, HEIGHT-
 fuel_consumption = 1/240
 can_dash = True
 enemy_list = []
-global enemy_timer; enemy_timer = 1
+global enemy_timer; enemy_timer = 1             # Why are these marked as global if they are already global
 global max_enemy_timer; max_enemy_timer = 4
 global max_enemy_fuel; max_enemy_fuel = 5
 particle_list = []
@@ -357,6 +420,9 @@ scoreboard_list = []
 fps_string = ""
 global last_dash; last_dash = 0
 global frame; frame = 0
+
+savepath = "Saves"
+HighestScore = 0
 
 # Floating text, no shit sherlock
 floating_text = None    # Set text to none because we don't need any text at startup, no shit sherlock
@@ -379,6 +445,7 @@ clock = pygame.time.Clock()
 font = pygame.font.SysFont("Courier New", 18)
 
 running = True
+LoadGame()
 music.play(-1)
 while running:
 
@@ -397,6 +464,8 @@ while running:
     if ball_vars["fuel"] <= 0: 
         ball_vars["alive"] = False
         window.blit(respawn_text, (WIDTH/2 - 400, HEIGHT/2))
+        if score > HighestScore:
+            SaveGame(score)
         music.stop()
     else: ball_vars["alive"] = True
 
@@ -412,9 +481,12 @@ while running:
     update_floatertext()
     update_scoreboard()
 
+    # High score
+    highscoretext = font.render(f"High score: {HighestScore}", False, (100,100,100))
+    window.blit(pygame.transform.scale_by(highscoretext, 1.2), (WIDTH-230, 50))
     # Simple scoreboard no shit sherlock
     scoretext = font.render(f"Score: {score}", False, (100,100,100))
-    window.blit(pygame.transform.scale_by(scoretext, 1.2), (WIDTH-200, 50))
+    window.blit(pygame.transform.scale_by(scoretext, 1.2), (WIDTH-230, 70))
 
     # Frame rate information
     fpstext = font.render(fps_string, False, (255,255,255))
@@ -422,6 +494,7 @@ while running:
 
     # Devboi do not fucking remove this loop or i will beat your skull into dust with a lead pipe
     # I will. <- this line was written by a person with massive skill issues
+    #              ^ That line was written by a person with even bigger skill issues
     strings = [
          "║║        ║ ╚═╗       ║",
          '║║[ YELLOW IS FUEL ]  ║',
