@@ -12,97 +12,223 @@ from datetime import datetime
 pygame.init()
 pygame.mixer.init()
 
+class Ball(object):
+    def __init__(self, is_player :bool = False, 
+                 radius :int = 6, 
+                 ball_active_sprite :pygame.surface = None, 
+                 ball_non_active_sprite :pygame.surface = None,
+                 initial_location :tuple = (1280/2, 720/2), fuel :float = 30) -> None:
+        
+        self.x                   = initial_location[0]
+        self.y                   = initial_location[1]
+        self.fuel                = fuel
+        self.x_speed             = 0
+        self.y_speed             = 0
+        self.x_acc               = 1/3
+        self.y_acc               = 0.75
+        self.gravity             = 0.2
+        self.alive               = True
+        self.radius              = radius
+        self.accelerating        = True
+        self.iframes_left        = 0
+        self.active_sprite       = ball_active_sprite
+        self.inactive_sprite     = ball_non_active_sprite
+        self.CanDash             = True
+        self.Is_Player           = is_player
+        self.Dead                = False
+        
+    def Check_Collision(self):
+        # right border
+        if self.x > WIDTH - self.radius:
+            self.x = WIDTH - self.radius
+            self.x_speed *= -0.6
+            if self.x_speed < -0.4:
+                create_particles(None, 4, {"x": self.x, "y": self.y}, 3, 0.12, (255, 255, 255), 36, 5)
+                sfx_bounce.play()
 
-def player_move():
-    global can_dash
-    global score
-    global last_dash
-    keys_pressed = pygame.key.get_pressed()
-    if (keys_pressed[pygame.K_UP] or keys_pressed[pygame.K_w]) and ball_vars["alive"]: 
-        ball_vars["y_speed"] -= ball_vars["y_acc"]
-        ball_vars["fuel"] -= 1/40
-        ball_vars["accelerating"] = True
-    if (keys_pressed[pygame.K_DOWN] or keys_pressed[pygame.K_s]) and ball_vars["alive"]: 
-        ball_vars["y_speed"] += ball_vars["y_acc"]
-        ball_vars["fuel"] -= 1/40
-        ball_vars["accelerating"] = True
-    if (keys_pressed[pygame.K_RIGHT] or keys_pressed[pygame.K_d]) and ball_vars["alive"]: 
-        ball_vars["x_speed"] += ball_vars["x_acc"]
-        ball_vars["fuel"] -= 1/40
-        ball_vars["accelerating"] = True
-    if (keys_pressed[pygame.K_LEFT] or keys_pressed[pygame.K_a]) and ball_vars["alive"]: 
-        ball_vars["x_speed"] -= ball_vars["x_acc"]
-        ball_vars["fuel"] -= 1/40
-        ball_vars["accelerating"] = True
-    if (keys_pressed[pygame.K_LCTRL]) and ball_vars["alive"]:
-        ball_vars["x_speed"] = 0
-        ball_vars["y_speed"] = 0
-    if (keys_pressed[pygame.K_SPACE]) and ball_vars["alive"] and mine["timer"] < 0:
-        create_mine()
-    if (keys_pressed[pygame.K_h]):
-        ball_vars["fuel"] = 9002
-    if (keys_pressed[pygame.K_r]) and not ball_vars["alive"]:
-        respawn()
-    if (keys_pressed[pygame.K_LSHIFT]) and ball_vars["alive"] and (time.time() - last_dash > 2):
-        ball_vars["x_speed"] += (int(ball_vars["x_speed"] > 0) - 0.5) * 2 * 10
-        ball_vars["y_speed"] += (int(ball_vars["y_speed"] > 0) - 0.5) * 2 * 10
-        ball_vars["fuel"] = ball_vars["fuel"] - 3
-        create_particles("create_subparticles", 20, {"x": ball_vars["x"], "y": ball_vars["y"]}, 3, 0.12, (100, 100, 255), 36, 5)
-        ball_vars["iframes_left"] = 20
-        sfx_dash.play()
-        can_dash = False
-        score += 25
-        scoreboard_list.append(["FAST +25", 0])
-        last_dash = time.time()
+        # left border
+        if self.x < self.radius:
+            self.x = self.radius
+            self.x_speed *= -0.6
+            if self.x_speed > 0.4:
+                create_particles(None, 4, {"x": self.x, "y": self.y}, 3, 0.12, (255, 255, 255), 36, 5)
+                sfx_bounce.play()
 
-    ball_vars["y_speed"] += ball_vars["self_gravity"]
-    ball_vars["x"] += ball_vars["x_speed"]
-    ball_vars["y"] += ball_vars["y_speed"]
-    ball_vars["iframes_left"] -= 1
+        # top border
+        if self.y < self.radius:
+            self.y = self.radius
+            self.y_speed *= -0.6
+            if self.y_speed > 0.4:
+                create_particles(None, 4, {"x": self.x, "y": self.y}, 3, 0.12, (255, 255, 255), 36, 5)
+                sfx_bounce.play()
+
+        # bottom border
+        if self.y > HEIGHT - self.radius:
+            self.y = HEIGHT - self.radius
+            self.y_speed *= -0.6
+            if self.x_speed > 0:
+                self.x_speed -= 0.01
+            if self.x_speed < 0:
+                self.x_speed += 0.01
+            if self.y_speed < -0.4:
+                create_particles(None, 4, {"x": self.x, "y": self.y}, 3, 0.12, (255, 255, 255), 36, 5)
+                sfx_bounce.play()
+
+    def Respawn(self):
+        global max_enemy_fuel, score, enemy_list, max_enemy_timer
+        self.fuel = 30
+        self.alive = True
+        self.x = WIDTH/2
+        self.y = HEIGHT/2
+        self.x_speed = 0
+        self.y_speed = 0
+        music.play(-1)
+        max_enemy_fuel = 5
+        max_enemy_timer = 4
+        enemy_list = []
+        score = 0
+        self.Dead = False
+        music.stop()
+        music.play(-1)
+        LoadGame()
+
+    def Handle_Movement(self):
+        global score
+        global last_dash
+        keys_pressed = pygame.key.get_pressed()
+        if (keys_pressed[pygame.K_UP] or keys_pressed[pygame.K_w]) and self.alive: 
+            self.y_speed -= self.y_acc
+            self.fuel -= 1/40
+            self.accelerating = True
+        if (keys_pressed[pygame.K_DOWN] or keys_pressed[pygame.K_s]) and self.alive: 
+            self.y_speed += self.y_acc
+            self.fuel -= 1/40
+            self.accelerating = True
+        if (keys_pressed[pygame.K_RIGHT] or keys_pressed[pygame.K_d]) and self.alive: 
+            self.x_speed += self.x_acc
+            self.fuel -= 1/40
+            self.accelerating = True
+        if (keys_pressed[pygame.K_LEFT] or keys_pressed[pygame.K_a]) and self.alive: 
+            self.x_speed -= self.x_acc
+            self.fuel -= 1/40
+            self.accelerating = True
+        if (keys_pressed[pygame.K_LCTRL]) and self.alive:
+            self.x_speed = 0
+            self.y_speed = 0
+        if (keys_pressed[pygame.K_SPACE]) and self.alive :#and True: #MINE!!!!!!
+            create_mine()
+        if (keys_pressed[pygame.K_h]):
+            self.fuel = 9002
+        if (keys_pressed[pygame.K_r]) and not self.alive:
+            self.Respawn()
+        if (keys_pressed[pygame.K_LSHIFT]) and self.alive and (time.time() - last_dash > 2):
+            self.x_speed += (int(self.x_speed > 0) - 0.5) * 2 * 10
+            self.y_speed += (int(self.y_speed > 0) - 0.5) * 2 * 10
+            self.fuel = self.fuel - 3
+            create_particles("create_subparticles", 20, {"x": self.x, "y": self.y}, 3, 0.12, (100, 100, 255), 36, 5)
+            self.iframes_left = 20
+            sfx_dash.play()
+            self.can_dash = False
+            score += 25
+            scoreboard_list.append(["FAST +25", 0])
+            last_dash = time.time()
+
+
+    def Create_Trail(self):
+        if self.alive and self.accelerating: ball_trail_list.append({"x": self.x, "y": self.y, "age": 0, "active": True})
+        elif self.alive and not self.accelerating: ball_trail_list.append({"x": self.x, "y": self.y, "age": 0, "active": False})
+        for ball_trail in ball_trail_list:
+            ball_trail["age"] += 1
+            if ball_trail["age"] > 9:
+                ball_trail_list.pop(ball_trail_list.index(ball_trail))
+            if ball_trail["active"]: pygame.draw.circle(window, (max(0, 255 - 24 * ball_trail["age"]), max(0, 255 - 48 * ball_trail["age"]), 0), (ball_trail["x"], ball_trail["y"]), 4 - 0.36 * ball_trail["age"])
+            else: pygame.draw.circle(window, (max(0, 31 - 2 * ball_trail["age"]), max(0, 31 - 2 * ball_trail["age"]), 0), (ball_trail["x"], ball_trail["y"]), 4 - 0.36 * ball_trail["age"])
+
+    def Update(self):
+        self.Check_Collision()
+        if self.Is_Player:
+            self.Handle_Movement()
+            self.Create_Trail()
+        self.iframes_left -= 1
+        sprite = self.active_sprite if self.accelerating and self.alive else self.inactive_sprite
+        window.blit(sprite, (self.x - self.radius, self.y - self.radius))
+        self.y_speed += self.gravity
+        self.x += self.x_speed
+        self.y += self.y_speed
+        self.iframes_left -= 1
+
+        if self.alive:
+            self.alive = False if self.fuel <= 0 else True
+        else:
+            if self.Is_Player:
+                window.blit(respawn_text, (WIDTH/2 - 400, HEIGHT/2))
+                if score > HighestScore and not self.Dead:
+                    SaveGame(score)
+                    music.stop()
+            self.Dead = True
+
+class Enemy(Ball):
+    def __init__(self, is_player: bool = False, radius: int = 6, ball_active_sprite: pygame.surface = None, ball_non_active_sprite: pygame.surface = None, initial_location: tuple = (1280 / 2, 720 / 2), fuel: float = 30) -> None:
+        super().__init__(is_player, radius, ball_active_sprite, ball_non_active_sprite, initial_location, fuel)
+
+
+    def Update_Enemy(self):
+        self.Update()
+        global score, max_enemy_fuel, enemy_list
+        self.fuel -= 1/60
+        if self.fuel <= 0:
+            self.alive = False
+            self.accelerating = True
+            if self.Dead == False:
+                create_particles(None, 8, {"x": self.x, "y": self.y}, 4, 0, (20, 52, 100), 50, 5)
+                sfx_enemydead.play()
+                self.accelerating = False
+                self.Dead = True
+                score += 107
+                draw_floatertext(f"+{107}", 20, 2, (playerball.x, playerball.y), (100,100,100))
+                scoreboard_list.append(["Slaughtered +107", 0])
+        
+        if ((abs(playerball.x - self.x) < playerball.radius + self.radius) and (abs(playerball.y - self.y) < playerball.radius + self.radius) and self.alive) and playerball.iframes_left <= 0:
+            player_speed = math.sqrt(playerball.x_speed**2 + playerball.y_speed**2)
+            if player_speed > 20:
+                self.alive = False  
+                create_particles(None, 8, {"x": self.x, "y": self.y}, 4, 0, (20, 52, 100), 50, 5)
+                sfx_enemydead.play()
+                playerball.x_speed = playerball.x_speed - self.x_speed
+                playerball.y_speed = playerball.y_speed - self.y_speed
+                playerball.fuel += 12.5
+                score += 352
+                draw_floatertext(f"+{352}", 20, 2, (playerball.x, playerball.y), (100,100,100))
+                scoreboard_list.append(["DASHED +352", 0])
+            else:
+                playerball.fuel /= 1.33
+                if playerball.alive:
+                    sfx_hit.play()  
+                    create_particles(None, 10, {"x": playerball.x, "y": playerball.y}, 4, 0.15, (255, 255 ,255), 60, 5)
+                    score -= 91
+                    draw_floatertext(f"-{91}", 20, 2, (playerball.x, playerball.y), (100,100,100))
+                    scoreboard_list.append(["skill issue -42", 0])
+
+                    playerball.iframes_left = 30
+
+        if (playerball.x - self.x < self.radius + playerball.radius) and self.alive:
+            self.x_speed -= self.x_acc
+        elif (self.x - playerball.x < self.radius + playerball.radius) and self.alive: 
+            self.x_speed += self.x_acc
+
+        if (playerball.y - self.y < self.radius + playerball.radius) and self.alive:
+            self.y_speed -= self.y_acc
+        elif (self.y - playerball.y < self.radius + playerball.radius) and self.alive: 
+            self.y_speed += self.y_acc
+        if (not self.alive) and (abs(self.y_speed) < 0.3) and (abs(self.x_speed) < 0.3):
+            enemy_list.pop(enemy_list.index(self))
+    
 
 def create_particles(tag, amount, pos, max_speed, fall_acc, color, max_age, radius):
     for _ in range(random.randint(int(amount/2), amount)):
         particle = {"x": pos["x"]+random.randint(-radius, radius), "y": pos["y"]+random.randint(-radius, radius), "x_speed": random.randint(-max_speed*10, max_speed*10)/10, "y_speed": random.randint(-max_speed*10, max_speed*10)/10, "fall_acc": fall_acc, "age": 0, "tag": tag, "color": color, "max_age": max_age, "radius": radius}
         particle_list.append(particle)
 
-def check_player_collision():
-    # right border
-    if ball_vars["x"]  > WIDTH - ball_vars["radius"]:
-        ball_vars["x"] = WIDTH - ball_vars["radius"]
-        ball_vars["x_speed"] *= -0.6
-        if ball_vars["x_speed"] < -0.4:
-            create_particles(
-                None, 4, {"x": ball_vars["x"], "y": ball_vars["y"]}, 3, 0.12, (255, 255, 255), 36, 5)
-            sfx_bounce.play()
-            
-    # left border
-    if ball_vars["x"]  < ball_vars["radius"]:
-        ball_vars["x"] = ball_vars["radius"]
-        ball_vars["x_speed"] *= -0.6
-        if ball_vars["x_speed"] > 0.4:
-            create_particles(
-                None, 4, {"x": ball_vars["x"], "y": ball_vars["y"]}, 3, 0.12, (255, 255, 255), 36, 5)
-            sfx_bounce.play()
-            
-    # top border
-    if ball_vars["y"]  < ball_vars["radius"]:
-        ball_vars["y"] = ball_vars["radius"]
-        ball_vars["y_speed"] *= -0.6
-        if ball_vars["y_speed"] > 0.4:
-            create_particles(
-                None, 4, {"x": ball_vars["x"], "y": ball_vars["y"]}, 3, 0.12, (255, 255, 255), 36, 5)
-            sfx_bounce.play()
-
-    # bottom border
-    if ball_vars["y"]  > HEIGHT - ball_vars["radius"]:
-        ball_vars["y"] = HEIGHT - ball_vars["radius"]
-        ball_vars["y_speed"] *= -0.6
-        if ball_vars["x_speed"] > 0: ball_vars["x_speed"] -= 0.01
-        if ball_vars["x_speed"] < 0: ball_vars["x_speed"] += 0.01
-        if ball_vars["y_speed"] < -0.4:
-            create_particles(
-                None, 4, {"x": ball_vars["x"], "y": ball_vars["y"]}, 3, 0.12, (255, 255, 255), 36, 5)
-            sfx_bounce.play()
 
 def Log(text :str, category: str, location: str):
     """ text: What is the error
@@ -151,137 +277,57 @@ def particle_update():
                                     max(int(particle["color"][2] - particle["color"][2] * (particle["age"] / particle["max_age"] * 2.0)), 0)),
                                     (particle["x"], particle["y"]), particle["radius"] - particle["radius"] * (particle["age"] / particle["max_age"]))
 
-def ball_trail_update():
-    if ball_vars["alive"] and ball_vars["accelerating"]: ball_trail_list.append({"x": ball_vars["x"], "y": ball_vars["y"], "age": 0, "active": True})
-    elif ball_vars["alive"] and not ball_vars["accelerating"]: ball_trail_list.append({"x": ball_vars["x"], "y": ball_vars["y"], "age": 0, "active": False})
-    for ball_trail in ball_trail_list:
-        ball_trail["age"] += 1
-        if ball_trail["age"] > 9:
-            ball_trail_list.pop(ball_trail_list.index(ball_trail))
-        if ball_trail["active"]: pygame.draw.circle(window, (max(0, 255 - 24 * ball_trail["age"]), max(0, 255 - 48 * ball_trail["age"]), 0), (ball_trail["x"], ball_trail["y"]), 4 - 0.36 * ball_trail["age"])
-        else: pygame.draw.circle(window, (max(0, 31 - 2 * ball_trail["age"]), max(0, 31 - 2 * ball_trail["age"]), 0), (ball_trail["x"], ball_trail["y"]), 4 - 0.36 * ball_trail["age"])
 
 def check_goal():
-    global score; global max_enemy_fuel; global max_enemy_timer
+    global score, max_enemy_fuel, max_enemy_timer, playerball
     goal_destroyed["y_speed"] += 0.05
     if goal_destroyed["y"] > HEIGHT-12:
         goal_destroyed["y_speed"] = 0
     goal_destroyed["y"] += goal_destroyed["y_speed"]
     create_particles(None, 1, {"x": goal_destroyed["x"]+12, "y": goal_destroyed["y"]+12}, 0, -0.05, (90, 90, 90), 60, 4)
 
-    if (abs(ball_vars["x"] - goal_vars["x"]) < ball_vars["radius"] + goal_vars["radius"]) and (abs(ball_vars["y"] - goal_vars['y']) < ball_vars["radius"] + goal_vars["radius"]):
+    if (abs(playerball.x - goal_vars["x"]) < playerball.radius + goal_vars["radius"]) and (abs(playerball.y - goal_vars['y']) < playerball.radius + goal_vars["radius"]):
         create_particles("create_subparticles", 12, {"x": goal_vars["x"], "y": goal_vars["y"]}, 3, 0.07, (255, 255, 0), 50, 6)
         goal_destroyed["x"] = goal_vars["x"] - goal_vars["radius"]
         goal_destroyed["y"] = goal_vars["y"] - goal_vars["radius"]
         goal_destroyed["y_speed"] = 0
         goal_vars["x"] = random.randint(10, WIDTH)
         goal_vars["y"] = random.randint(10, HEIGHT)
-        ball_vars["fuel"] = min(60, ball_vars["fuel"] + 6.3)
+        playerball.fuel = min(60, playerball.fuel + 6.3)
         score += 127
-        draw_floatertext(f"+{127}", 20, 2, (ball_vars["x"], ball_vars["y"]), (100,100,100))
+        draw_floatertext(f"+{127}", 20, 2, (playerball.x, playerball.y), (100,100,100))
         sfx_explosion.play()
         max_enemy_fuel *= 1.125
         scoreboard_list.append(["Destroyed +127", 0])
         max_enemy_timer *= 0.925
         max_enemy_timer += 0.2
 
-def create_enemies():
-    global enemy_timer; global max_enemy_fuel; global max_enemy_timer
+def Create_Enemies():
+    global enemy_timer, max_enemy_fuel, max_enemy_timer
     enemy_timer -= 1/60
-    if enemy_timer <= 0 and ball_vars["alive"]:
+    if enemy_timer <= 0 and playerball.alive:
         sfx_enemyspawn.play()
         enemy_timer = max_enemy_timer
-        enemy_list.append({"x": 500, "y": 500, "x_speed": 0, "y_speed": 0, "x_acc": 0.2, "y_acc": 1/3, "fall_acc": 0.2, "radius": 6, "fuel": round(max_enemy_fuel, 0), "alive": True, "done": False})
-        create_particles(None, 14, {"x": enemy_list[-1]["x"], "y": enemy_list[-1]["y"]}, 4, 0, (200, 0, 0), 50, 5)
+        # enemy_list.append({"x": 500, "y": 500, "x_speed": 0, "y_speed": 0, "x_acc": 0.2, "y_acc": 1/3, "fall_acc": 0.2, "radius": 6, "fuel": round(max_enemy_fuel, 0), "alive": True, "done": False})
+        enemy_list.append(
+            Enemy(
+                False,
+                fuel=round(max_enemy_fuel, 0),
+                ball_active_sprite=enemy_sprite,
+                ball_non_active_sprite=enemy_dead_sprite,
+                initial_location=(500,500)
+            )
+        )
+        create_particles(None, 14, {"x": enemy_list[-1].x,  "y": enemy_list[-1].y}, 4, 0, (200, 0, 0), 50, 5)
 
-def update_enemies():
-    global score; global max_enemy_fuel
+def Update_Enemies():
+    Create_Enemies()
     for enemy in enemy_list:
-        enemy["fuel"] -= 1/60
-        if enemy["fuel"] <= 0:
-            enemy["alive"] = False
-            if enemy["done"] == False:
-                create_particles(None, 8, {"x": enemy["x"], "y": enemy["y"]}, 4, 0, (20, 52, 100), 50, 5)
-                sfx_enemydead.play()
-                enemy["done"] = True
-                score += 107
-                draw_floatertext(f"+{107}", 20, 2, (ball_vars["x"], ball_vars["y"]), (100,100,100))
-                scoreboard_list.append(["Slaughtered +107", 0])
-           
-        if (ball_vars["x"] - enemy["x"] < enemy["radius"] + ball_vars["radius"]) and enemy["alive"]:
-           enemy["x_speed"] -= enemy["x_acc"]
-        elif (enemy["x"] - ball_vars["x"] < enemy["radius"] + ball_vars["radius"]) and enemy["alive"]: 
-           enemy["x_speed"] += enemy["x_acc"]
-
-        if (ball_vars["y"] - enemy["y"] < enemy["radius"] + ball_vars["radius"]) and enemy["alive"]:
-           enemy["y_speed"] -= enemy["y_acc"]
-        elif (enemy["y"] - ball_vars["y"] < enemy["radius"] + ball_vars["radius"]) and enemy["alive"]: 
-           enemy["y_speed"] += enemy["y_acc"]
-        if not enemy["alive"]: enemy["y_speed"] += enemy["fall_acc"]
-        
-        enemy["x"] += enemy["x_speed"]
-        enemy["y"] += enemy["y_speed"]
-        check_enemy_collision()
-
-        if (not enemy["alive"]) and (abs(enemy["y_speed"]) < 0.3) and (abs(enemy["x_speed"]) < 0.3):
-            enemy_list.pop(enemy_list.index(enemy))
-        if not enemy["alive"]:
-            window.blit(enemy_dead_sprite, (enemy["x"], enemy["y"]))
-        else:
-            window.blit(enemy_sprite, (enemy["x"], enemy["y"]))
-
-def check_enemy_collision():
-    for enemy in enemy_list:
-    # right border
-        if enemy["x"]  > WIDTH - enemy["radius"]:
-            enemy["x"] = WIDTH - enemy["radius"]
-            enemy["x_speed"] *= -0.6
-
-        # left border
-        if enemy["x"] < enemy["radius"]:
-           enemy["x"] = enemy["radius"]
-           enemy["x_speed"] *= -0.6
-
-       # top border
-        if enemy["y"] < enemy["radius"]:
-           enemy["y"] = enemy["radius"]
-           enemy["y_speed"] *= -0.6
-
-      # bottom border
-        if enemy["y"]  > HEIGHT - enemy["radius"]*2:
-            enemy["y"] = HEIGHT - enemy["radius"]*2
-            enemy["y_speed"] *= -0.6
-            enemy["x_speed"] *= 0.99
-
-def check_enemies():
-    global score
-    player_speed = math.sqrt(ball_vars["x_speed"]**2 + ball_vars["y_speed"]**2)
-    for enemy in enemy_list:
-        if ((abs(ball_vars["x"] - enemy["x"]) < ball_vars["radius"] + enemy["radius"]) and (abs(ball_vars["y"] - enemy['y']) < ball_vars["radius"] + enemy["radius"]) and enemy["alive"]) and ball_vars["iframes_left"] <= 0:
-            if player_speed > 20:
-                enemy["alive"] = False  
-                create_particles(None, 8, {"x": enemy["x"], "y": enemy["y"]}, 4, 0, (20, 52, 100), 50, 5)
-                sfx_enemydead.play()
-                enemy["x_speed"] = ball_vars["x_speed"]
-                enemy["y_speed"] = ball_vars["y_speed"]
-                ball_vars["fuel"] += 12.5
-                score += 352
-                draw_floatertext(f"+{352}", 20, 2, (ball_vars["x"], ball_vars["y"]), (100,100,100))
-                scoreboard_list.append(["DASHED +352", 0])
-            else:
-                ball_vars["fuel"] /= 1.33
-                if ball_vars["alive"]:
-                    sfx_hit.play()  
-                    create_particles(None, 10, {"x": ball_vars["x"], "y": ball_vars["y"]}, 4, 0.15, (255, 255 ,255), 60, 5)
-                    score -= 91
-                    draw_floatertext(f"-{91}", 20, 2, (ball_vars["x"], ball_vars["y"]), (100,100,100))
-                    scoreboard_list.append(["skill issue -42", 0])
-
-                    ball_vars["iframes_left"] = 30
+        enemy.Update_Enemy()
 
 def create_mine():
-    mine["x"] = ball_vars["x"] - ball_vars["radius"]
-    mine["y"] = ball_vars["y"] - ball_vars["radius"]
+    mine["x"] = playerball.x - playerball.radius
+    mine["y"] = playerball.y - playerball.radius
     mine["timer"] = 100
 
 def check_mine():
@@ -291,35 +337,17 @@ def check_mine():
         sfx_beep.play()
     if mine["timer"] == 0:
         for enemy in enemy_list:
-            if ((mine["x"] - enemy["x"])**2 + (mine["y"] - enemy["y"])**2)**0.5 < 133:
-                enemy["alive"] = False
-                enemy["fuel"] = 0
+            if ((mine["x"] - enemy.x)**2 + (mine["y"] - enemy.y)**2)**0.5 < 133:
+                enemy.alive = False
+                enemy.fuel = 0
                 score += 411
                 scoreboard_list.append(["Blasted +411", 0])
-                draw_floatertext("+411", 20, 2, (enemy["x"], enemy["y"]))
+                draw_floatertext("+411", 20, 2, (enemy.x, enemy.y))
         create_particles(None, 1, {"x": mine["x"], "y": mine["y"]}, 0, 0, (255, 180, 0), 10, 133) 
         sfx_mine.play()
         mine["x"] = -500
         mine["y"] = -8000
 
-def respawn():
-    global max_enemy_fuel
-    global score
-    global enemy_list
-    global max_enemy_timer
-    ball_vars["fuel"] = 30
-    ball_vars["alive"] = True
-    ball_vars["x"] = WIDTH/2
-    ball_vars["y"] = HEIGHT/2
-    music.play(-1)
-    max_enemy_fuel = 5
-    max_enemy_timer = 4
-    enemy_list = []
-    score = 0
-    Dead = False
-    music.stop()
-    music.play(-1)
-    LoadGame()
 
 def check_fps():
     global fps_string
@@ -329,7 +357,6 @@ def check_fps():
     fps = 1/time_delta
     fps_list.append(fps)
     if len(fps_list) > 256: fps_list.pop(0)
-    # fps_string = f"time since last frame: {round(time_delta, 3)} ({round(fps, 1)} fps; {round(sum(fps_list)/256, 1)} average; {round(max(fps_list), 1)} max; {round(min(fps_list), 1)} min)"
     fps_string = f"time since last frame: {round(time_delta, 3)} ({round(fps, 1)} fps; {round(np.mean(fps_list), 1)} average; {round(max(fps_list), 1)} max; {round(min(fps_list), 1)} min)"
     last_fps_check_time = current_time
 
@@ -389,7 +416,6 @@ window = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("I wokup inanu bugatti")
 
 ball_sprite        = pygame.image.load("assets/sprites/ball.png")
-ball_sprite        = pygame.image.load("assets/sprites/ball.png")
 ball_active_sprite = pygame.image.load("assets/sprites/ball_active.png")
 goal_sprite        = pygame.image.load("assets/sprites/goal.png")
 enemy_sprite       = pygame.image.load("assets/sprites/enemy.png")
@@ -401,7 +427,7 @@ mine_sprite        = pygame.image.load("assets/sprites/mine.png")
 bgscale = 1 # How big the background is, no shit sherlock
 bgimage = pygame.transform.scale_by(pygame.image.load("assets/sprites/background.png"), bgscale)
 
-ball_vars = {"x": WIDTH/2, "y": HEIGHT/2, "fuel": 30, "x_speed": 0, "y_speed": 0, "x_acc": 1/3, "y_acc": 0.75, "self_gravity": 0.2, "alive": True, "radius": 6, "accelerating": False, "iframes_left": 0}
+#ball_vars = {"x": WIDTH/2, "y": HEIGHT/2, "fuel": 30, "x_speed": 0, "y_speed": 0, "x_acc": 1/3, "y_acc": 0.75, "self_gravity": 0.2, "alive": True, "radius": 6, "accelerating": False, "iframes_left": 0}
 goal_vars = {"x": random.randint(10, HEIGHT-10), "y": random.randint(10, HEIGHT-10), "radius": 12}
 fuel_consumption = 1/240
 can_dash = True
@@ -449,8 +475,14 @@ running = True
 LoadGame()
 Dead = False
 music.play(-1)
-while running:
 
+playerball = Ball(
+    True,
+    6, ball_active_sprite,
+    ball_sprite, (WIDTH/2, HEIGHT/2)
+    )
+
+while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
@@ -461,26 +493,22 @@ while running:
     # Blit background, no shit sherlock
     window.blit(bgimage, (0,0))
 
-    ball_vars["accelerating"] = False
-    ball_vars["fuel"] -= fuel_consumption
-    if ball_vars["fuel"] <= 0: 
-        ball_vars["alive"] = False
+    playerball.accelerating = False
+    playerball.fuel -= fuel_consumption
+    if playerball.fuel <= 0: 
+        playerball.alive = False
         window.blit(respawn_text, (WIDTH/2 - 400, HEIGHT/2))
         if score > HighestScore and not Dead:
             SaveGame(score)
         music.stop()
         Dead = True
-    else: ball_vars["alive"] = True
+    else: playerball.alive = True
 
     check_fps()
     pygame.draw.circle(window, (24, 16, 0), (mine["x"], mine["y"]), 100)
-    player_move()
-    check_player_collision()
     check_goal()
-    update_enemies()
-    check_enemies()
-    create_enemies()    
     check_mine()
+    Update_Enemies()
     update_floatertext()
     update_scoreboard()
 
@@ -504,12 +532,12 @@ while running:
          '║║ [ RED ARE THREAT ]═╝',
          '║╚══[ GOAL:  SURVIVE ]',
          '║ ',
-        f'╠═[ x ]═[ {int(ball_vars["x"])} ]',
-        f'╠═[ y ]═[ {int(ball_vars["y"])} ]',
-        f'╠═[ f ]═[ {max(round(ball_vars["fuel"], 1), 0)} ] ← !!',
-        f'╠═[ X ]═[ {round(ball_vars["x_speed"], 2)} ]',
-        f'╠═[ Y ]═[ {round(ball_vars["y_speed"], 2)} ]',
-        f'╠═[ i ]═[ {max(ball_vars["iframes_left"], 0)} ]',
+        f'╠═[ x ]═[ {int(playerball.x)} ]',
+        f'╠═[ y ]═[ {int(playerball.y)} ]',
+        f'╠═[ f ]═[ {max(round(playerball.fuel, 1), 0)} ] ← !!',
+        f'╠═[ X ]═[ {round(playerball.x_speed, 2)} ]',
+        f'╠═[ Y ]═[ {round(playerball.y_speed, 2)} ]',
+        f'╠═[ i ]═[ {max(playerball.iframes_left, 0)} ]',
         f'╠═[ E ]═[ {len(enemy_list)} ]',
         f'╠═[ e ]═[ {round(enemy_timer, 2)} ]',
         f'╠═[ m ]═[ {round(max_enemy_fuel, 1)} ]',
@@ -522,14 +550,13 @@ while running:
         window.blit(text, (0, 20 * (strings.index(string) + 1) - 20))
 
     window.blit(destroyed_goal_sprite, (goal_destroyed["x"], goal_destroyed["y"]))
-    ball_trail_update()
+
     particle_update()
 
     window.blit(goal_sprite, (goal_vars["x"] - goal_vars["radius"], goal_vars["y"] - goal_vars["radius"]))
     window.blit(mine_sprite, (mine["x"]-5, mine["y"]-5))
-    if ball_vars["accelerating"]: bs = ball_active_sprite
-    else: bs = ball_sprite
-    window.blit(bs, (ball_vars["x"] - ball_vars["radius"], ball_vars["y"] - ball_vars["radius"]))
+    
+    playerball.Update()
 
     frame += 1
     pygame.display.flip()
