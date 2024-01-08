@@ -151,7 +151,7 @@ class Ball(object):
             self.Create_Trail()
         self.iframes_left -= 1
         sprite = self.active_sprite if self.accelerating and self.alive else self.inactive_sprite
-        window.blit(sprite, (self.x - self.radius, self.y - self.radius))
+        window.blit(pygame.transform.rotate(sprite, CalculateRotationFromVelocity((self.x_speed, self.y))), (self.x - self.radius, self.y - self.radius))
         self.y_speed += self.gravity
         self.x += self.x_speed
         self.y += self.y_speed
@@ -325,6 +325,16 @@ def Update_Enemies():
     for enemy in enemy_list:
         enemy.Update_Enemy()
 
+def CalculateRotationFromVelocity(velocity: tuple()) -> float:
+    """ Input velocity in form of a tuple with 2 elements, x velocity and y velocity.
+        Right side positive, upwards negative."""
+    velocity_x = velocity[0]
+    velocity_y = velocity[1]
+    try:
+        return (math.atan2(velocity_y, velocity_x) * 180 / math.pi)
+    except ZeroDivisionError:
+        pass
+
 def create_mine():
     mine["x"] = playerball.x - playerball.radius
     mine["y"] = playerball.y - playerball.radius
@@ -422,6 +432,7 @@ enemy_sprite       = pygame.image.load("assets/sprites/enemy.png")
 enemy_dead_sprite  = pygame.image.load("assets/sprites/enemy_dead.png")
 destroyed_goal_sprite = pygame.image.load("assets/sprites/goal_destroyed.png")
 mine_sprite        = pygame.image.load("assets/sprites/mine.png")
+fish_sprite        = pygame.image.load("assets/sprites/fish.png")
 
 # Background, no shit sherlock
 bgscale = 1 # How big the background is, no shit sherlock
