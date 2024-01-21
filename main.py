@@ -35,7 +35,7 @@ class Ball(object):
         self.inactive_sprite     = ball_non_active_sprite
         self.CanDash             = True
         self.Is_Player           = is_player
-        self.Dead                = False
+        self.PygameEvents        = []
         
     def Check_Collision(self):
         # right border
@@ -87,7 +87,6 @@ class Ball(object):
         max_enemy_timer = 4
         enemy_list = []
         score = 0
-        self.Dead = False
         music.stop()
         music.play(-1)
         LoadGame()
@@ -95,6 +94,22 @@ class Ball(object):
     def Handle_Movement(self):
         global score
         global last_dash
+        for event in self.PygameEvents:
+            if event.type == pygame.KEYDOWN and event.key == (pygame.K_LSHIFT) and self.alive:
+                self.x_speed += (int(self.x_speed > 0) - 0.5) * 2 * 10
+                self.y_speed += (int(self.y_speed > 0) - 0.5) * 2 * 10
+                self.fuel = self.fuel - 3
+                create_particles("create_subparticles", 20, {"x": self.x, "y": self.y}, 3, 0.12, (100, 100, 255), 36, 5)
+                sfx_dash.play()
+                score += 25
+                scoreboard_list.append(["FAST +25", 0])
+            
+            elif event.type == pygame.KEYDOWN and event.key == (pygame.K_SPACE) and self.alive:
+                create_mine()
+        
+            elif event.type == pygame.KEYDOWN and event.key == (pygame.K_r) and not self.alive:
+                self.Respawn()
+
         keys_pressed = pygame.key.get_pressed()
         if (keys_pressed[pygame.K_UP] or keys_pressed[pygame.K_w]) and self.alive: 
             self.y_speed -= self.y_acc
@@ -115,23 +130,26 @@ class Ball(object):
         if (keys_pressed[pygame.K_LCTRL]) and self.alive:
             self.x_speed = 0
             self.y_speed = 0
-        if (keys_pressed[pygame.K_SPACE]) and self.alive :#and True: #MINE!!!!!!
-            create_mine()
         if (keys_pressed[pygame.K_h]):
             self.fuel = 9002
-        if (keys_pressed[pygame.K_r]) and not self.alive:
-            self.Respawn()
-        if (keys_pressed[pygame.K_LSHIFT]) and self.alive and (time.time() - last_dash > 2):
-            self.x_speed += (int(self.x_speed > 0) - 0.5) * 2 * 10
-            self.y_speed += (int(self.y_speed > 0) - 0.5) * 2 * 10
-            self.fuel = self.fuel - 3
-            create_particles("create_subparticles", 20, {"x": self.x, "y": self.y}, 3, 0.12, (100, 100, 255), 36, 5)
-            self.iframes_left = 20
-            sfx_dash.play()
-            self.can_dash = False
-            score += 25
-            scoreboard_list.append(["FAST +25", 0])
-            last_dash = time.time()
+
+        # LEGACY CODE
+
+        # if (keys_pressed[pygame.K_r]) and not self.alive:
+        #     self.Respawn()
+        # if (keys_pressed[pygame.K_SPACE]) and self.alive :#and True: #MINE!!!!!!
+        #     create_mine()
+        # if (keys_pressed[pygame.K_LSHIFT]) and self.alive and (time.time() - last_dash > 2):
+        #     self.x_speed += (int(self.x_speed > 0) - 0.5) * 2 * 10
+        #     self.y_speed += (int(self.y_speed > 0) - 0.5) * 2 * 10
+        #     self.fuel = self.fuel - 3
+        #     create_particles("create_subparticles", 20, {"x": self.x, "y": self.y}, 3, 0.12, (100, 100, 255), 36, 5)
+        #     self.iframes_left = 20
+        #     sfx_dash.play()
+        #     self.can_dash = False
+        #     score += 25
+        #     scoreboard_list.append(["FAST +25", 0])
+        #     last_dash = time.time()
 
 
     def Create_Trail(self):
@@ -144,6 +162,11 @@ class Ball(object):
             if ball_trail["active"]: pygame.draw.circle(window, (max(0, 255 - 24 * ball_trail["age"]), max(0, 255 - 48 * ball_trail["age"]), 0), (ball_trail["x"], ball_trail["y"]), 4 - 0.36 * ball_trail["age"])
             else: pygame.draw.circle(window, (max(0, 31 - 2 * ball_trail["age"]), max(0, 31 - 2 * ball_trail["age"]), 0), (ball_trail["x"], ball_trail["y"]), 4 - 0.36 * ball_trail["age"])
 
+    def Die(self):
+        if self.Is_Player and score > HighestScore:
+            SaveGame(score)
+            music.stop
+    
     def Update(self):
         self.Check_Collision()
         if self.Is_Player:
@@ -157,15 +180,16 @@ class Ball(object):
         self.y += self.y_speed
         self.iframes_left -= 1
 
+        if self.fuel <= 0 and self.alive:
+            self.Die()
+            self.alive = False
+
         if self.alive:
-            self.alive = False if self.fuel <= 0 else True
+            pass
         else:
             if self.Is_Player:
                 window.blit(respawn_text, (WIDTH/2 - 400, HEIGHT/2))
-                if score > HighestScore and not self.Dead:
-                    SaveGame(score)
-                    music.stop()
-            self.Dead = True
+
 
 class Enemy(Ball):
     def __init__(self, is_player: bool = False, radius: int = 6, ball_active_sprite: pygame.surface = None, ball_non_active_sprite: pygame.surface = None, initial_location: tuple = (1280 / 2, 720 / 2), fuel: float = 30) -> None:
@@ -179,11 +203,11 @@ class Enemy(Ball):
         if self.fuel <= 0:
             self.alive = False
             self.accelerating = True
-            if self.Dead == False:
+            if self.alive == True:
                 create_particles(None, 8, {"x": self.x, "y": self.y}, 4, 0, (20, 52, 100), 50, 5)
                 sfx_enemydead.play()
                 self.accelerating = False
-                self.Dead = True
+                self.alive = False
                 score += 107
                 draw_floatertext(f"+{107}", 20, 2, (playerball.x, playerball.y), (100,100,100))
                 scoreboard_list.append(["Slaughtered +107", 0])
@@ -293,7 +317,7 @@ def check_goal():
         goal_destroyed["y_speed"] = 0
         goal_vars["x"] = random.randint(10, WIDTH)
         goal_vars["y"] = random.randint(10, HEIGHT)
-        if playerball.Dead: playerball.Dead = False; music.play(-1)
+        if not playerball.alive: playerball.alive = True; music.play(-1)
         playerball.fuel = min(60, playerball.fuel + 6.3)
         score += 127
         draw_floatertext(f"+{127}", 20, 2, (playerball.x, playerball.y), (100,100,100))
@@ -495,7 +519,9 @@ playerball = Ball(
     )
 
 while running:
-    for event in pygame.event.get():
+    events = pygame.event.get()
+    playerball.PygameEvents = events
+    for event in events:
         if event.type == pygame.QUIT:
             running = False
             break
