@@ -293,6 +293,7 @@ def check_goal():
         goal_destroyed["y_speed"] = 0
         goal_vars["x"] = random.randint(10, WIDTH)
         goal_vars["y"] = random.randint(10, HEIGHT)
+        if playerball.Dead: playerball.Dead = False; music.play(-1)
         playerball.fuel = min(60, playerball.fuel + 6.3)
         score += 127
         draw_floatertext(f"+{127}", 20, 2, (playerball.x, playerball.y), (100,100,100))
