@@ -534,7 +534,6 @@ font = pygame.font.SysFont("Courier New", 18)
 
 running = True
 load_game()
-Dead = False
 pygame.mixer.music.play(loops=-1)
 
 playerball = Ball(True, 6, ball_active_sprite, ball_sprite, (WIDTH/2, HEIGHT/2))
@@ -554,14 +553,6 @@ while running:
 
     playerball.accelerating = False
     playerball.fuel -= fuel_consumption
-    if playerball.fuel <= 0: 
-        playerball.alive = False
-        window.blit(respawn_text, (WIDTH/2 - 400, HEIGHT/2))
-        if score > HighestScore and not Dead:
-            save_game(score)
-        pygame.mixer.music.pause()
-        Dead = True
-    else: playerball.alive = True
 
     playerball.iframes -= 1
     check_fps()
