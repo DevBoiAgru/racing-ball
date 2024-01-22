@@ -8,7 +8,7 @@ import pickle      # Could've used json, but that makes it easier to cheat
 import numpy as np # mf why did you import it and not even use it :skull:
                    # I forgot to uncomment the code after comparing performance :wideskull:
 from datetime import datetime
-
+from pathlib import Path
 pygame.init()
 pygame.mixer.init()
 music = pygame.mixer.music
@@ -108,40 +108,37 @@ class Ball:
 
             # music switcher (very cool)
             elif event.type == pygame.KEYDOWN and event.key == (pygame.K_1):
-                music.stop()
                 music.unload()
                 music.load("assets/sfx/Lethal company boombox song 5.mp3")
                 music.play(loops=-1)
             
             elif event.type == pygame.KEYDOWN and event.key == (pygame.K_2):
-                music.stop()
                 music.unload()
                 music.load("assets/sfx/Electro-Light - Symbolism [NCS Release].mp3")
                 music.play(loops=-1, start=3)
 
             elif event.type == pygame.KEYDOWN and event.key == (pygame.K_3):
-                music.stop()
                 music.unload()
                 music.load("assets/sfx/HL2 Apprehension and Evasion.mp3")
                 music.play(loops=-1, start=10)
 
             elif event.type == pygame.KEYDOWN and event.key == (pygame.K_4):
-                music.stop()
                 music.unload()
                 music.load("assets/sfx/HL Credits Closing Theme.mp3")
                 music.play(loops=-1)
 
             elif event.type == pygame.KEYDOWN and event.key == (pygame.K_5):
-                music.stop()
                 music.unload()
                 music.load("assets/sfx/Stray Error-22.mp3")
                 music.play(loops=-1)
 
             elif event.type == pygame.KEYDOWN and event.key == (pygame.K_6):
-                music.stop()
                 music.unload()
                 music.load("assets/sfx/Stray Trash Zone.mp3")
                 music.play(loops=-1, start=7)
+
+            elif event.type == pygame.KEYDOWN and event.key == (pygame.K_9):
+                CycleUserMusic()
 
         keys_pressed = pygame.key.get_pressed()
         if (keys_pressed[pygame.K_UP] or keys_pressed[pygame.K_w]) and self.alive: 
@@ -470,6 +467,22 @@ def update_scoreboard():
         window.blit(text, (WIDTH-230, 95 + 15*i))
         i += 1
 
+def CycleUserMusic():
+    global musicindex, music_files
+    if len(music_files) > 0:
+        if musicindex > len(music_files) -1:
+            musicindex = 0
+        file = os.path.join(music_path, music_files[musicindex])
+        music.unload()
+        music.load(file)
+        display_text = f"Now playing {music_files[musicindex]}"
+        music.play(loops=-1, start=7)
+        musicindex +=1
+    else:
+        display_text = "No music files found."
+    draw_floatertext(display_text, 20, 2, (WIDTH/2 - len(display_text)*6, HEIGHT - 50), (255,255,255))
+    
+
 global WIDTH, HEIGHT; WIDTH, HEIGHT = 1280, 720
 window = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("I wokup inanu bugatti")
@@ -492,7 +505,7 @@ goal_vars = {"x": random.randint(10, HEIGHT-10), "y": random.randint(10, HEIGHT-
 fuel_consumption = 1/240
 can_dash = True
 enemy_list = []
-global enemy_timer; enemy_timer = 1             # Why are these marked as global if they are already global | it works and therefore im not touching it
+global enemy_timer; enemy_timer = 1             # Why are these marked as global if they are already global | it works and therefore im not touching it | Bruh
 global max_enemy_timer; max_enemy_timer = 4
 global max_enemy_fuel; max_enemy_fuel = 5
 particle_list = []
@@ -507,8 +520,11 @@ scoreboard_list = []
 fps_string = ""
 global last_dash; last_dash = 0
 global frame; frame = 0
-
+musicindex = 0
 savepath = "Saves"
+music_path = str(Path.home() / "Music")
+music_files = next(os.walk(music_path), (None, None, []))[2]
+music_files = [file for file in music_files if file.split(".")[-1] in ["mp3", "ogg", "wav"]]
 HighestScore = 0
 
 # Floating text, no shit sherlock
