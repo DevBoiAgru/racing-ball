@@ -469,17 +469,20 @@ def update_scoreboard():
 
 def CycleUserMusic():
     global musicindex, music_files
-    if len(music_files) > 0:
-        if musicindex > len(music_files) -1:
-            musicindex = 0
-        file = os.path.join(music_path, music_files[musicindex])
-        music.unload()
-        music.load(file)
-        display_text = f"Now playing {music_files[musicindex]}"
-        music.play(loops=-1, start=7)
-        musicindex +=1
-    else:
-        display_text = "No music files found."
+    try:
+        if len(music_files) > 0:
+            if musicindex > len(music_files) -1:
+                musicindex = 0
+            file = os.path.join(music_path, music_files[musicindex])
+            music.unload()
+            music.load(file)
+            display_text = f"Now playing {music_files[musicindex]}"
+            music.play(loops=-1, start=7)
+            musicindex +=1
+        else:
+            display_text = "No music files found."
+    except:
+        display_text = "Couldn't find music in the music directory"
     draw_floatertext(display_text, 20, 2, (WIDTH/2 - len(display_text)*6, HEIGHT - 50), (255,255,255))
     
 
