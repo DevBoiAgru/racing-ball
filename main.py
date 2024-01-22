@@ -256,7 +256,7 @@ class Enemy(Ball):
                 score += 352
                 draw_floatertext(f"+{352}", 20, 2, (playerball.x, playerball.y), (100,100,100))
                 scoreboard_list.append(["DASHED +352", 0])
-            else:
+            elif playerball.iframes <= 0:
                 playerball.fuel = min(playerball.fuel - 4, playerball.fuel / 1.33)
                 if playerball.alive:
                     sfx_hit.play()  
@@ -265,16 +265,20 @@ class Enemy(Ball):
                     draw_floatertext(f"-{91}", 20, 2, (playerball.x, playerball.y), (100,100,100))
                     scoreboard_list.append(["skill issue -91", 0])
 
-                    playerball.iframes = 14
+                    playerball.iframes = 20
+            else:
+                score += 13
+                scoreboard_list.append(["Ignored +13", 0])
+                playerball.fuel += math.sqrt(2)/3
 
-        if (playerball.x - self.x < self.radius + playerball.radius) and self.alive:
+        if (playerball.x - self.x < 0) and self.alive:
             self.x_speed -= self.x_acc
-        elif (self.x - playerball.x < self.radius + playerball.radius) and self.alive: 
+        elif (self.x - playerball.x < 0) and self.alive: 
             self.x_speed += self.x_acc
 
-        if (playerball.y - self.y < self.radius + playerball.radius) and self.alive:
+        if (playerball.y - self.y < 0) and self.alive:
             self.y_speed -= self.y_acc
-        elif (self.y - playerball.y < self.radius + playerball.radius) and self.alive: 
+        elif (self.y - playerball.y < 0) and self.alive: 
             self.y_speed += self.y_acc
         if (not self.alive) and (abs(self.y_speed) < 0.3) and (abs(self.x_speed) < 0.3):
             enemy_list.pop(enemy_list.index(self))
@@ -282,7 +286,7 @@ class Enemy(Ball):
 
 def create_particles(tag, amount, pos, max_speed, fall_acc, color, max_age, radius):
     for _ in range(random.randint(int(amount/2), amount)):
-        particle = {"x": pos["x"]+random.randint(-radius, radius), "y": pos["y"]+random.randint(-radius, radius), "x_speed": max_speed * random.random(), "y_speed": max_speed * random.random(), "fall_acc": fall_acc, "age": 0, "tag": tag, "color": color, "max_age": max_age, "radius": radius}
+        particle = {"x": pos["x"]+random.randint(-radius, radius), "y": pos["y"]+random.randint(-radius, radius), "x_speed": max_speed * (random.random() - 0.5), "y_speed": max_speed * (random.random() - 0.5), "fall_acc": fall_acc, "age": 0, "tag": tag, "color": color, "max_age": max_age, "radius": radius}
         particle_list.append(particle)
 
 def Log(text :str, category: str, location: str):
@@ -559,6 +563,7 @@ while running:
         Dead = True
     else: playerball.alive = True
 
+    playerball.iframes -= 1
     check_fps()
     pygame.draw.circle(window, (24, 16, 0), (mine["x"], mine["y"]), 100)
     check_goal()
@@ -594,7 +599,7 @@ while running:
         f'╠═[ f ]═[ {max(round(playerball.fuel, 1), 0)} ] ← !!',
         f'╠═[ X ]═[ {round(playerball.x_speed, 2)} ]',
         f'╠═[ Y ]═[ {round(playerball.y_speed, 2)} ]',
-        f'╠═[ i ]═[ {max(playerball.iframes_left, 0)} ]',
+        f'╠═[ i ]═[ {max(playerball.iframes, 0)} ]',
         f'╠═[ E ]═[ {len(enemy_list)} ]',
         f'╠═[ e ]═[ {round(enemy_timer, 2)} ]',
         f'╠═[ m ]═[ {round(max_enemy_fuel, 1)} ]',
