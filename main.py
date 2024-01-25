@@ -227,7 +227,7 @@ class Enemy(Ball):
 
     def update_enemy(self):
         self.update()
-        global score, max_enemy_fuel, enemy_list
+        global score, max_enemy_fuel, enemy_list, last_kill_time, combo_timeout, combo_multiplier
         self.fuel -= 1/60
         if self.fuel <= 0:
             self.alive = False
@@ -253,6 +253,18 @@ class Enemy(Ball):
                 score += 352
                 draw_floatertext(f"+{352}", 20, 2, (playerball.x, playerball.y), (100,100,100))
                 scoreboard_list.append(["DASHED +352", 0])
+
+                # Combo bombo  
+                if time.time() - last_kill_time <= combo_timeout:
+                    combo_multiplier += 1
+                    if combo_multiplier >= 2:
+                        scoreboard_list.append([f"Kill combo x{combo_multiplier} {250*combo_multiplier}", 0])
+                        score += 250*combo_multiplier
+                else:
+                    combo_multiplier = 1
+
+                last_kill_time = time.time()
+
             elif playerball.iframes <= 0:
                 playerball.fuel = min(playerball.fuel - 4, playerball.fuel / 1.33)
                 if playerball.alive:
@@ -390,7 +402,7 @@ def create_mine():
     mine["timer"] = 100
 
 def check_mine():
-    global score
+    global score, last_kill_time, combo_timeout, combo_multiplier
     mine["timer"] -= 1
     if (mine["timer"] % 20 == 0) and (mine["timer"] > 0):
         sfx_beep.play()
@@ -401,6 +413,17 @@ def check_mine():
                 enemy.fuel = 0
                 score += 411
                 scoreboard_list.append(["Blasted +411", 0])
+                
+                # Combo bombo  
+                if time.time() - last_kill_time <= combo_timeout:
+                    combo_multiplier += 1
+                    if combo_multiplier >= 2:
+                        scoreboard_list.append([f"Kill combo x{combo_multiplier} {250*combo_multiplier}", 0])
+                        score += 250*combo_multiplier
+                else:
+                    combo_multiplier = 1
+
+                last_kill_time = time.time()
                 draw_floatertext("+411", 20, 2, (enemy.x, enemy.y))
         create_particles(None, 1, {"x": mine["x"], "y": mine["y"]}, 0, 0, (255, 180, 0), 10, 133) 
         sfx_mine.play()
@@ -529,6 +552,9 @@ music_path = str(Path.home() / "Music")
 music_files = next(os.walk(music_path), (None, None, []))[2]
 music_files = [file for file in music_files if file.split(".")[-1] in ["mp3", "ogg", "wav"]]
 HighestScore = 0
+last_kill_time = 0
+combo_timeout = 5
+combo_multiplier = 1
 
 # Floating text, no shit sherlock
 floating_text = None    # Set text to none because we don't need any text at startup, no shit sherlock
@@ -598,6 +624,7 @@ while running:
     # I will. <- this line was written by a person with massive skill issues
     #              ^ That line was written by a person with even bigger skill issues
     #                   f^ i REALLY hate how this person writes python code
+    #                       ^ I will continue using PascalCase cry about it lol xd
     strings = [
          "║║        ║ ╚═╗       ║",
          '║║[ YELLOW IS FUEL ]  ║',
@@ -637,10 +664,8 @@ while running:
 pygame.quit()
 
 """
-TODO add kill combo bonuses
 TODO add a bossfight (fish boss real)
 TODO improve the visual effects
-TODO fix game freezing shortly after dying (reason unknown)
 TODO fix the mine explosion behaving weirdly
 TODO stylize the scoreboard
 TODO add enemy variety
@@ -649,6 +674,8 @@ TODO add background stains (when enemies get killed, goals destroyed, dashes das
 DOING refactor the code to make it more readable
 DOING add variety to gameplay (somehow idk) 
 ------------------------------------
+DONE add kill combo bonuses
+DONE fix game freezing shortly after dying (reason unknown)
 DONE add a way to respawn LIKE WHY DIDN'T WE ADD THIS BEFORE
 DONE add scoreboard
 DONE improve ball handling
