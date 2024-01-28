@@ -18,8 +18,8 @@ class Ball:
         self.x = initial_location[0]
         self.y = initial_location[1]
         self.fuel = fuel
-        self.x_speed = 0
-        self.y_speed = 0
+        self.x_vel = 0
+        self.y_vel = 0
         self.x_acc = 1/3
         self.y_acc = 0.75
         self.gravity = 0.2
@@ -33,41 +33,42 @@ class Ball:
         self.Is_Player = is_player
         self.iframes = iframes
         self.PygameEvents = []
+        self.total_vel = 0
         
     def check_collision(self):
         # right border
         if self.x > WIDTH - self.radius:
             self.x = WIDTH - self.radius
-            self.x_speed *= -0.6
-            if self.x_speed < -0.4 and self.Is_Player:
+            self.x_vel *= -0.6
+            if self.x_vel < -0.4 and self.Is_Player:
                 create_particles(None, 4, {"x": self.x, "y": self.y}, 3, 0.12, (255, 255, 255), 36, 5)
                 sfx_bounce.play()
 
         # left border
         if self.x < self.radius:
             self.x = self.radius
-            self.x_speed *= -0.6
-            if self.x_speed > 0.4 and self.Is_Player:
+            self.x_vel *= -0.6
+            if self.x_vel > 0.4 and self.Is_Player:
                 create_particles(None, 4, {"x": self.x, "y": self.y}, 3, 0.12, (255, 255, 255), 36, 5)
                 sfx_bounce.play()
 
         # top border
         if self.y < self.radius:
             self.y = self.radius
-            self.y_speed *= -0.6
-            if self.y_speed > 0.4 and self.Is_Player:
+            self.y_vel *= -0.6
+            if self.y_vel > 0.4 and self.Is_Player:
                 create_particles(None, 4, {"x": self.x, "y": self.y}, 3, 0.12, (255, 255, 255), 36, 5)
                 sfx_bounce.play()
 
         # bottom border
         if self.y > HEIGHT - self.radius:
             self.y = HEIGHT - self.radius
-            self.y_speed *= -0.6
-            if self.x_speed > 0:
-                self.x_speed -= 0.01
-            if self.x_speed < 0:
-                self.x_speed += 0.01
-            if self.y_speed < -0.4 and self.Is_Player:
+            self.y_vel *= -0.6
+            if self.x_vel > 0:
+                self.x_vel -= 0.01
+            if self.x_vel < 0:
+                self.x_vel += 0.01
+            if self.y_vel < -0.4 and self.Is_Player:
                 create_particles(None, 4, {"x": self.x, "y": self.y}, 3, 0.12, (255, 255, 255), 36, 5)
                 sfx_bounce.play()
 
@@ -77,8 +78,8 @@ class Ball:
         self.alive = True
         self.x = WIDTH/2
         self.y = HEIGHT/2
-        self.x_speed = 0
-        self.y_speed = 0
+        self.x_vel = 0
+        self.y_vel = 0
         max_enemy_fuel = 5
         max_enemy_timer = 4
         enemy_list = []
@@ -91,14 +92,15 @@ class Ball:
         global last_dash
         for event in self.PygameEvents:
             if event.type == pygame.KEYDOWN and event.key == (pygame.K_LSHIFT) and self.alive:
-                self.x_speed += (int(self.x_speed > 0) - 0.5) * 2 * 10
-                self.y_speed += (int(self.y_speed > 0) - 0.5) * 2 * 10
+                self.total_vel = math.sqrt(self.x_vel**2 + self.y_vel**2)
+                self.x_vel += 20 * (self.x_vel / self.total_vel)
+                self.y_vel += 20 * (self.y_vel / self.total_vel)
                 self.fuel = self.fuel - 3
                 create_particles("create_subparticles", 20, {"x": self.x, "y": self.y}, 3, 0.12, (100, 100, 255), 36, 5)
                 self.iframes = max(self.iframes + 8, 8)
                 sfx_dash.play()
                 score += 25
-                scoreboard_list.append(["FAST +25", 0])
+                scoreboard_list.append(["FAST +25", 0, (80, 80, 130)])
             
             elif event.type == pygame.KEYDOWN and event.key == (pygame.K_SPACE) and self.alive and mine["timer"] < -45:
                 create_mine()
@@ -137,31 +139,38 @@ class Ball:
                 music.load("assets/sfx/Stray Trash Zone.mp3")
                 music.play(loops=-1, start=7)
 
-            elif event.type == pygame.KEYDOWN and event.key == (pygame.K_9):
+            elif event.type == pygame.KEYDOWN and event.key == (pygame.K_7):
+                music.unload()
+                music.load("assets/sfx/GD Stay Inside Me.mp3")
+                music.play(loops=-1)
+
+            elif event.type == pygame.KEYDOWN and event.key == (pygame.K_0):
                 CycleUserMusic()
 
         keys_pressed = pygame.key.get_pressed()
         if (keys_pressed[pygame.K_UP] or keys_pressed[pygame.K_w]) and self.alive: 
-            self.y_speed -= self.y_acc
+            self.y_vel -= self.y_acc
             self.fuel -= 1/40
             self.accelerating = True
         if (keys_pressed[pygame.K_DOWN] or keys_pressed[pygame.K_s]) and self.alive: 
-            self.y_speed += self.y_acc
+            self.y_vel += self.y_acc
             self.fuel -= 1/40
             self.accelerating = True
         if (keys_pressed[pygame.K_RIGHT] or keys_pressed[pygame.K_d]) and self.alive: 
-            self.x_speed += self.x_acc
+            self.x_vel += self.x_acc
             self.fuel -= 1/40
             self.accelerating = True
         if (keys_pressed[pygame.K_LEFT] or keys_pressed[pygame.K_a]) and self.alive: 
-            self.x_speed -= self.x_acc
+            self.x_vel -= self.x_acc
             self.fuel -= 1/40
             self.accelerating = True
         if (keys_pressed[pygame.K_LCTRL]) and self.alive:
-            self.x_speed /= 1.5
-            self.y_speed /= 1.5
+            self.x_vel /= 1.5
+            self.y_vel /= 1.5
         if (keys_pressed[pygame.K_h]):
             self.fuel = 9002
+
+        self.total_vel = math.sqrt(self.x_vel**2 + self.y_vel**2)
 
         # LEGACY CODE
 
@@ -170,8 +179,8 @@ class Ball:
         # if (keys_pressed[pygame.K_SPACE]) and self.alive :#and True: #MINE!!!!!!
         #     create_mine()
         # if (keys_pressed[pygame.K_LSHIFT]) and self.alive and (time.time() - last_dash > 2):
-        #     self.x_speed += (int(self.x_speed > 0) - 0.5) * 2 * 10
-        #     self.y_speed += (int(self.y_speed > 0) - 0.5) * 2 * 10
+        #     self.x_vel += (int(self.x_vel > 0) - 0.5) * 2 * 10
+        #     self.y_vel += (int(self.y_vel > 0) - 0.5) * 2 * 10
         #     self.fuel = self.fuel - 3
         #     create_particles("create_subparticles", 20, {"x": self.x, "y": self.y}, 3, 0.12, (100, 100, 255), 36, 5)
         #     self.iframes_left = 20
@@ -205,9 +214,9 @@ class Ball:
         self.iframes_left -= 1
         sprite = self.active_sprite if self.accelerating and self.alive else self.inactive_sprite
         window.blit(sprite, (self.x - self.radius, self.y - self.radius))
-        self.y_speed += self.gravity
-        self.x += self.x_speed
-        self.y += self.y_speed
+        self.y_vel += self.gravity
+        self.x += self.x_vel
+        self.y += self.y_vel
         self.iframes_left -= 1
 
         if self.fuel <= 0 and self.alive:
@@ -230,7 +239,6 @@ class Enemy(Ball):
         global score, max_enemy_fuel, enemy_list, last_kill_time, combo_timeout, combo_multiplier
         self.fuel -= 1/60
         if self.fuel <= 0:
-            self.alive = False
             self.accelerating = True
             if self.alive == True:
                 create_particles(None, 8, {"x": self.x, "y": self.y}, 4, 0, (20, 52, 100), 50, 5)
@@ -238,27 +246,27 @@ class Enemy(Ball):
                 self.accelerating = False
                 self.alive = False
                 score += 107
-                draw_floatertext(f"+{107}", 20, 2, (playerball.x, playerball.y), (100,100,100))
-                scoreboard_list.append(["Slaughtered +107", 0])
+                draw_floatertext(f"+{107}", 20, 2, (playerball.x, playerball.y), (160,80,80))
+                scoreboard_list.append(["Slaughtered +107", 0, (160, 80, 80)])
         
         if ((abs(playerball.x - self.x) < playerball.radius + self.radius) and (abs(playerball.y - self.y) < playerball.radius + self.radius) and self.alive) and playerball.iframes_left <= 0:
-            player_speed = math.sqrt(playerball.x_speed**2 + playerball.y_speed**2)
-            if player_speed > 20:
+            vel_diff = abs(playerball.total_vel - math.sqrt(self.x_vel**2 + self.y_vel**2))
+            if vel_diff > 24:
                 self.alive = False  
                 create_particles(None, 8, {"x": self.x, "y": self.y}, 4, 0, (20, 52, 100), 50, 5)
                 sfx_enemydead.play()
-                playerball.x_speed = playerball.x_speed - self.x_speed
-                playerball.y_speed = playerball.y_speed - self.y_speed
+                playerball.x_vel = playerball.x_vel - self.x_vel
+                playerball.y_vel = playerball.y_vel - self.y_vel
                 playerball.fuel += 12.5
                 score += 352
-                draw_floatertext(f"+{352}", 20, 2, (playerball.x, playerball.y), (100,100,100))
-                scoreboard_list.append(["DASHED +352", 0])
+                draw_floatertext(f"+{352}", 20, 2, (playerball.x, playerball.y), (255, 0, 0))
+                scoreboard_list.append(["DASHED +399", 0, (255, 0, 0)])
 
                 # Combo bombo  
                 if time.time() - last_kill_time <= combo_timeout:
                     combo_multiplier += 1
                     if combo_multiplier >= 2:
-                        scoreboard_list.append([f"Kill combo x{combo_multiplier} {250*combo_multiplier}", 0])
+                        scoreboard_list.append([f"Kill combo x{combo_multiplier} {250*combo_multiplier}", 0, (140, 60, 140)])
                         score += 250*combo_multiplier
                 else:
                     combo_multiplier = 1
@@ -272,30 +280,30 @@ class Enemy(Ball):
                     create_particles(None, 10, {"x": playerball.x, "y": playerball.y}, 4, 0.15, (255, 255 ,255), 60, 5)
                     score -= 91
                     draw_floatertext(f"-{91}", 20, 2, (playerball.x, playerball.y), (100,100,100))
-                    scoreboard_list.append(["skill issue -91", 0])
+                    scoreboard_list.append(["skill issue -91", 0, (50, 50, 50)])
 
                     playerball.iframes = 20
             else:
                 score += 13
-                scoreboard_list.append(["Ignored +13", 0])
+                scoreboard_list.append(["Ignored +13", 0, (80, 120, 80)])
                 playerball.fuel += math.sqrt(2)/3
 
         if (playerball.x - self.x < 0) and self.alive:
-            self.x_speed -= self.x_acc
+            self.x_vel -= self.x_acc
         elif (self.x - playerball.x < 0) and self.alive: 
-            self.x_speed += self.x_acc
+            self.x_vel += self.x_acc
 
         if (playerball.y - self.y < 0) and self.alive:
-            self.y_speed -= self.y_acc
+            self.y_vel -= self.y_acc
         elif (self.y - playerball.y < 0) and self.alive: 
-            self.y_speed += self.y_acc
-        if (not self.alive) and (abs(self.y_speed) < 0.3) and (abs(self.x_speed) < 0.3):
+            self.y_vel += self.y_acc
+        if (not self.alive) and (abs(self.y_vel) < 0.3) and (abs(self.x_vel) < 0.3):
             enemy_list.pop(enemy_list.index(self))
     
 
-def create_particles(tag, amount, pos, max_speed, fall_acc, color, max_age, radius):
+def create_particles(tag, amount, pos, max_vel, fall_acc, color, max_age, radius):
     for _ in range(random.randint(int(amount/2), amount)):
-        particle = {"x": pos["x"]+random.randint(-radius, radius), "y": pos["y"]+random.randint(-radius, radius), "x_speed": max_speed * (random.random() - 0.5), "y_speed": max_speed * (random.random() - 0.5), "fall_acc": fall_acc, "age": 0, "tag": tag, "color": color, "max_age": max_age, "radius": radius}
+        particle = {"x": pos["x"]+random.randint(-radius, radius), "y": pos["y"]+random.randint(-radius, radius), "x_vel": max_vel * (random.random() - 0.5), "y_vel": max_vel * (random.random() - 0.5), "fall_acc": fall_acc, "age": 0, "tag": tag, "color": color, "max_age": max_age, "radius": radius}
         particle_list.append(particle)
 
 def Log(text :str, category: str, location: str):
@@ -333,12 +341,12 @@ def particle_update():
         if particle["age"] > particle["max_age"]:
             particle_list.pop(particle_list.index(particle))
     
-        particle["y_speed"] += particle["fall_acc"]
-        particle["x"] += particle["x_speed"]
-        particle["y"] += particle["y_speed"]
+        particle["y_vel"] += particle["fall_acc"]
+        particle["x"] += particle["x_vel"]
+        particle["y"] += particle["y_vel"]
 
         if (particle["tag"] == "create_subparticles") and frame % 2 == 0:
-            particle_list.append({"x": particle["x"], "y": particle["y"], "x_speed": 0, "y_speed": 0, "fall_acc": 0, "age": int(particle["age"]/2), "tag": None, "color": particle["color"], "max_age": particle["max_age"]*1.5, "radius": particle["radius"]})
+            particle_list.append({"x": particle["x"], "y": particle["y"], "x_vel": 0, "y_vel": 0, "fall_acc": 0, "age": int(particle["age"]/2), "tag": None, "color": particle["color"], "max_age": particle["max_age"]*1.5, "radius": particle["radius"]})
 
         pygame.draw.circle(window, (max(int(particle["color"][0] - particle["color"][0] * (particle["age"] / particle["max_age"])), 0), 
                                     max(int(particle["color"][1] - particle["color"][1] * (particle["age"] / particle["max_age"] * 1.5)), 0), 
@@ -347,28 +355,38 @@ def particle_update():
 
 def check_goal():
     global score, max_enemy_fuel, max_enemy_timer, playerball
-    goal_destroyed["y_speed"] += 0.05
+    goal_destroyed["y_vel"] += 0.05
     if goal_destroyed["y"] > HEIGHT-12:
-        goal_destroyed["y_speed"] = 0
-    goal_destroyed["y"] += goal_destroyed["y_speed"]
+        goal_destroyed["y_vel"] = 0
+    goal_destroyed["y"] += goal_destroyed["y_vel"]
     create_particles(None, 1, {"x": goal_destroyed["x"]+12, "y": goal_destroyed["y"]+12}, 0, -0.05, (90, 90, 90), 60, 4)
 
     if (abs(playerball.x - goal_vars["x"]) < playerball.radius + goal_vars["radius"]) and (abs(playerball.y - goal_vars['y']) < playerball.radius + goal_vars["radius"]):
         create_particles("create_subparticles", 12, {"x": goal_vars["x"], "y": goal_vars["y"]}, 3, 0.07, (255, 255, 0), 50, 6)
         goal_destroyed["x"] = goal_vars["x"] - goal_vars["radius"]
         goal_destroyed["y"] = goal_vars["y"] - goal_vars["radius"]
-        goal_destroyed["y_speed"] = 0
+        goal_destroyed["y_vel"] = 0
         goal_vars["x"] = random.randint(10, WIDTH)
         goal_vars["y"] = random.randint(10, HEIGHT)
-        if not playerball.alive: playerball.alive = True; pygame.mixer.music.unpause()
-        playerball.fuel = min(60, playerball.fuel + 6.3)
-        score += 127
-        draw_floatertext(f"+{127}", 20, 2, (playerball.x, playerball.y), (100,100,100))
+        if not playerball.alive: 
+            playerball.alive = True;
+            pygame.mixer.music.unpause()
+
+        if playerball.total_vel > 15:
+            playerball.fuel += 13
+            score += 242
+            draw_floatertext("+242", 20, 2, (playerball.x, playerball.y), (180, 180, 0))
+            scoreboard_list.append(["QUICKFUEL +242", 0, (180, 180, 0)])
+        else:
+            playerball.fuel = min(60, playerball.fuel + 6.3)
+            score += 127
+            draw_floatertext(f"+{127}", 20, 2, (playerball.x, playerball.y), (130, 130, 70))
+            scoreboard_list.append(["Refuel +127", 0, (130, 130, 70)])
+
         sfx_explosion.play()
         max_enemy_fuel *= 1.125
-        scoreboard_list.append(["Destroyed +127", 0])
         max_enemy_timer *= 0.925
-        max_enemy_timer += 0.2
+        max_enemy_timer += 0.175
 
 def create_enemies():
     global enemy_timer, max_enemy_fuel, max_enemy_timer
@@ -376,7 +394,7 @@ def create_enemies():
     if enemy_timer <= 0 and playerball.alive:
         sfx_enemyspawn.play()
         enemy_timer = max_enemy_timer
-        # enemy_list.append({"x": 500, "y": 500, "x_speed": 0, "y_speed": 0, "x_acc": 0.2, "y_acc": 1/3, "fall_acc": 0.2, "radius": 6, "fuel": round(max_enemy_fuel, 0), "alive": True, "done": False})
+        # enemy_list.append({"x": 500, "y": 500, "x_vel": 0, "y_vel": 0, "x_acc": 0.2, "y_acc": 1/3, "fall_acc": 0.2, "radius": 6, "fuel": round(max_enemy_fuel, 0), "alive": True, "done": False})
         enemy_list.append(Enemy(False, fuel=round(max_enemy_fuel, 0), ball_active_sprite=enemy_sprite, ball_non_active_sprite=enemy_dead_sprite, initial_location=(500,500)))
         create_particles(None, 14, {"x": enemy_list[-1].x,  "y": enemy_list[-1].y}, 4, 0, (200, 0, 0), 50, 5)
 
@@ -399,7 +417,7 @@ def calc_rotation(velocity: tuple()) -> float:
 def create_mine():
     mine["x"] = playerball.x - playerball.radius
     mine["y"] = playerball.y - playerball.radius
-    mine["timer"] = 100
+    mine["timer"] = 81
 
 def check_mine():
     global score, last_kill_time, combo_timeout, combo_multiplier
@@ -412,13 +430,13 @@ def check_mine():
                 enemy.alive = False
                 enemy.fuel = 0
                 score += 411
-                scoreboard_list.append(["Blasted +411", 0])
+                scoreboard_list.append(["Blasted +411", 0, (255, 255, 0)])
                 
                 # Combo bombo  
                 if time.time() - last_kill_time <= combo_timeout:
                     combo_multiplier += 1
                     if combo_multiplier >= 2:
-                        scoreboard_list.append([f"Kill combo x{combo_multiplier} {250*combo_multiplier}", 0])
+                        scoreboard_list.append([f"Kill combo x{combo_multiplier} {250*combo_multiplier}", 0, (140, 80, 140)])
                         score += 250*combo_multiplier
                 else:
                     combo_multiplier = 1
@@ -486,7 +504,7 @@ def update_scoreboard():
         if item[1] > 120:
             scoreboard_list.pop(i)
 
-        text = font.render(item[0], False, (100, 100, 100))
+        text = font.render(item[0], False, item[2])
         window.blit(text, (WIDTH-230, 95 + 15*i))
         i += 1
 
@@ -526,7 +544,7 @@ fish_sprite        = pygame.image.load("assets/sprites/fish.png")
 bgscale = 1 # How big the background is, no shit sherlock
 bgimage = pygame.transform.scale_by(pygame.image.load("assets/sprites/background.png"), bgscale)
 
-#ball_vars = {"x": WIDTH/2, "y": HEIGHT/2, "fuel": 30, "x_speed": 0, "y_speed": 0, "x_acc": 1/3, "y_acc": 0.75, "self_gravity": 0.2, "alive": True, "radius": 6, "accelerating": False, "iframes_left": 0}
+#ball_vars = {"x": WIDTH/2, "y": HEIGHT/2, "fuel": 30, "x_vel": 0, "y_vel": 0, "x_acc": 1/3, "y_acc": 0.75, "self_gravity": 0.2, "alive": True, "radius": 6, "accelerating": False, "iframes_left": 0}
 goal_vars = {"x": random.randint(10, HEIGHT-10), "y": random.randint(10, HEIGHT-10), "radius": 12}
 fuel_consumption = 1/240
 can_dash = True
@@ -538,7 +556,7 @@ particle_list = []
 ball_trail_list = []
 global score; score = 0
 show_floating_text_for = 0
-goal_destroyed = {"x": -500, "y": -8000, "y_speed": 0}
+goal_destroyed = {"x": -500, "y": -8000, "y_vel": 0}
 mine = {"x": -500, "y": -8000, "timer": -1}
 fps_list = []
 global last_fps_check_time; last_fps_check_time = 0
@@ -634,8 +652,8 @@ while running:
         f'╠═[ x ]═[ {int(playerball.x)} ]',
         f'╠═[ y ]═[ {int(playerball.y)} ]',
         f'╠═[ f ]═[ {max(round(playerball.fuel, 1), 0)} ] ← !!',
-        f'╠═[ X ]═[ {round(playerball.x_speed, 2)} ]',
-        f'╠═[ Y ]═[ {round(playerball.y_speed, 2)} ]',
+        f'╠═[ X ]═[ {round(playerball.x_vel, 2)} ]',
+        f'╠═[ Y ]═[ {round(playerball.y_vel, 2)} ]',
         f'╠═[ i ]═[ {max(playerball.iframes, 0)} ]',
         f'╠═[ E ]═[ {len(enemy_list)} ]',
         f'╠═[ e ]═[ {round(enemy_timer, 2)} ]',
@@ -667,7 +685,6 @@ pygame.quit()
 TODO add a bossfight (fish boss real)
 TODO improve the visual effects
 TODO fix the mine explosion behaving weirdly
-TODO stylize the scoreboard
 TODO add enemy variety
 TODO add background stains (when enemies get killed, goals destroyed, dashes dashed etc.) # Crazy
 ------------------------------------
@@ -681,5 +698,6 @@ DONE add scoreboard
 DONE improve ball handling
 DONE add a simple background instead of the black void
 DONE add sfx and bgm
+DONE stylize the scoreboard
 """
 # j <- literally the only instance of this letter in the entire code :skull:
