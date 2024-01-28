@@ -112,36 +112,50 @@ class Ball:
             elif event.type == pygame.KEYDOWN and event.key == (pygame.K_1):
                 music.unload()
                 music.load("assets/sfx/Lethal company boombox song 5.mp3")
+                display_text = "Now playing Lethal Company Boombox song"
+                draw_floatertext(display_text, 20, 2, (WIDTH/2 - len(display_text)*6, HEIGHT - 50), (255,255,255))
                 music.play(loops=-1)
             
             elif event.type == pygame.KEYDOWN and event.key == (pygame.K_2):
                 music.unload()
                 music.load("assets/sfx/Electro-Light - Symbolism [NCS Release].mp3")
+                display_text = "Now playing Turi ip ip ip"
+                draw_floatertext(display_text, 20, 2, (WIDTH/2 - len(display_text)*6, HEIGHT - 50), (255,255,255))
                 music.play(loops=-1, start=3)
 
             elif event.type == pygame.KEYDOWN and event.key == (pygame.K_3):
                 music.unload()
                 music.load("assets/sfx/HL2 Apprehension and Evasion.mp3")
+                display_text = "Now playing Half Life 2 Apprehension and Evasion"
+                draw_floatertext(display_text, 20, 2, (WIDTH/2 - len(display_text)*6, HEIGHT - 50), (255,255,255))
                 music.play(loops=-1, start=10)
 
             elif event.type == pygame.KEYDOWN and event.key == (pygame.K_4):
                 music.unload()
                 music.load("assets/sfx/HL Credits Closing Theme.mp3")
+                display_text = "Now playing Half Life Closing Theme"
+                draw_floatertext(display_text, 20, 2, (WIDTH/2 - len(display_text)*6, HEIGHT - 50), (255,255,255))
                 music.play(loops=-1)
 
             elif event.type == pygame.KEYDOWN and event.key == (pygame.K_5):
                 music.unload()
                 music.load("assets/sfx/Stray Error-22.mp3")
+                display_text = "Now playing Stray Error-22"
+                draw_floatertext(display_text, 20, 2, (WIDTH/2 - len(display_text)*6, HEIGHT - 50), (255,255,255))
                 music.play(loops=-1)
 
             elif event.type == pygame.KEYDOWN and event.key == (pygame.K_6):
                 music.unload()
                 music.load("assets/sfx/Stray Trash Zone.mp3")
+                display_text = "Now playing Stray Trash Zone"
+                draw_floatertext(display_text, 20, 2, (WIDTH/2 - len(display_text)*6, HEIGHT - 50), (255,255,255))
                 music.play(loops=-1, start=7)
 
             elif event.type == pygame.KEYDOWN and event.key == (pygame.K_7):
                 music.unload()
                 music.load("assets/sfx/GD Stay Inside Me.mp3")
+                display_text = "Now playing Geometry Dash Stay inside me"
+                draw_floatertext(display_text, 20, 2, (WIDTH/2 - len(display_text)*6, HEIGHT - 50), (255,255,255))
                 music.play(loops=-1)
 
             elif event.type == pygame.KEYDOWN and event.key == (pygame.K_0):
@@ -171,25 +185,6 @@ class Ball:
             self.fuel = 9002
 
         self.total_vel = math.sqrt(self.x_vel**2 + self.y_vel**2)
-
-        # LEGACY CODE
-
-        # if (keys_pressed[pygame.K_r]) and not self.alive:
-        #     self.respawn()
-        # if (keys_pressed[pygame.K_SPACE]) and self.alive :#and True: #MINE!!!!!!
-        #     create_mine()
-        # if (keys_pressed[pygame.K_LSHIFT]) and self.alive and (time.time() - last_dash > 2):
-        #     self.x_vel += (int(self.x_vel > 0) - 0.5) * 2 * 10
-        #     self.y_vel += (int(self.y_vel > 0) - 0.5) * 2 * 10
-        #     self.fuel = self.fuel - 3
-        #     create_particles("create_subparticles", 20, {"x": self.x, "y": self.y}, 3, 0.12, (100, 100, 255), 36, 5)
-        #     self.iframes_left = 20
-        #     sfx_dash.play()
-        #     self.can_dash = False
-        #     score += 25
-        #     scoreboard_list.append(["FAST +25", 0])
-        #     last_dash = time.time()
-
 
     def create_trail(self):
         if self.alive and self.accelerating: ball_trail_list.append({"x": self.x, "y": self.y, "age": 0, "active": True})
