@@ -108,6 +108,10 @@ class Ball:
             elif event.type == pygame.KEYDOWN and event.key == (pygame.K_r) and not self.alive:
                 self.respawn()
 
+            elif event.type == pygame.KEYDOWN and event.key == (pygame.K_g) and self.alive:
+                grenades_list.append({"x": self.x, "y": self.y, "x_vel": self.x_vel * 0.5, "y_vel": self.y_vel * 0.5, "y_acc": 0.1, "age": random.randint(-60, -20)})
+                self.fuel -= 3.5
+
             # music switcher (very cool)
             elif event.type == pygame.KEYDOWN and event.key == (pygame.K_1):
                 music.unload()
@@ -269,8 +273,8 @@ class Enemy(Ball):
                 self.alive = False  
                 create_particles(None, 8, {"x": self.x, "y": self.y}, 4, 0, (20, 52, 100), 50, 5)
                 sfx_enemydead.play()
-                playerball.x_vel = playerball.x_vel - self.x_vel
-                playerball.y_vel = playerball.y_vel - self.y_vel
+                self.x_vel = playerball.x_vel
+                self.y_vel = playerball.y_vel
                 playerball.fuel += 12.5
                 score += 352
                 draw_floatertext(f"+{352}", 20, 2, (playerball.x, playerball.y), (255, 0, 0))
@@ -316,7 +320,7 @@ class Enemy(Ball):
     
 
 def create_particles(tag, amount, pos, max_vel, fall_acc, color, max_age, radius):
-    for _ in range(random.randint(int(amount/2), amount)):
+    for _ in range(random.randint(math.ceil(amount/2), amount)):
         particle = {"x": pos["x"]+random.randint(-radius, radius), "y": pos["y"]+random.randint(-radius, radius), "x_vel": max_vel * (random.random() - 0.5), "y_vel": max_vel * (random.random() - 0.5), "fall_acc": fall_acc, "age": 0, "tag": tag, "color": color, "max_age": max_age, "radius": radius}
         particle_list.append(particle)
 
@@ -424,7 +428,7 @@ def calc_rotation(velocity: tuple()) -> float:
     velocity_x = velocity[0]
     velocity_y = velocity[1]
     try:
-        return (math.atan2(velocity_y, velocity_x) * 180 / math.pi)
+        return (math.atan2(velocity_x, velocity_y) * 180 / math.pi)
     except ZeroDivisionError:
         pass
 
@@ -540,6 +544,29 @@ def CycleUserMusic():
         display_text = "Couldn't find music in the music directory"
     draw_floatertext(display_text, 20, 2, (WIDTH/2 - len(display_text)*6, HEIGHT - 50), (255,255,255))
     
+def handle_grenades():
+    global score
+    i = 0
+    for grenade in grenades_list:
+        grenade["y_vel"] += grenade["y_acc"]
+        grenade["x"] += grenade["x_vel"] 
+        grenade["y"] += grenade["y_vel"]
+        grenade["age"] += 1
+        if grenade["age"] >= 0:
+            grenades_list.pop(i)
+            create_particles(None, 1, {"x": grenade["x"], "y": grenade["y"]}, 0, 0, (255, 180, 0), 10, 20) 
+        for enemy in enemy_list:
+            if (((grenade["x"] - enemy.x)**2 + (grenade["y"] - enemy.y)**2)**0.5 < 70) and grenade["age"] > -15:
+                create_particles(None, 1, {"x": grenade["x"], "y": grenade["y"]}, 0, 0, (255, 180, 0), 10, 20)
+                grenades_list.pop(i) 
+                enemy.alive = False
+                enemy.fuel = 0
+                score += 740
+                scoreboard_list.append(["Bombed +740", 0, (255, 100, 0)])
+            
+        i += 0
+
+        window.blit(pygame.transform.rotate(grenade_sprite, calc_rotation([grenade["x_vel"], grenade["y_vel"]])-180), (grenade["x"], grenade["y"]))
 
 global WIDTH, HEIGHT; WIDTH, HEIGHT = 1280, 720
 window = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -553,6 +580,7 @@ enemy_dead_sprite  = pygame.image.load("assets/sprites/enemy_dead.png")
 destroyed_goal_sprite = pygame.image.load("assets/sprites/goal_destroyed.png")
 mine_sprite        = pygame.image.load("assets/sprites/mine.png")
 fish_sprite        = pygame.image.load("assets/sprites/fish.png")
+grenade_sprite        = pygame.image.load("assets/sprites/grenade.png")
 
 # Background, no shit sherlock
 bgscale = 1 # How big the background is, no shit sherlock
@@ -587,6 +615,7 @@ HighestScore = 0
 last_kill_time = 0
 combo_timeout = 5
 combo_multiplier = 1
+grenades_list = []
 
 # Floating text, no shit sherlock
 floating_text = None    # Set text to none because we don't need any text at startup, no shit sherlock
@@ -639,6 +668,7 @@ while running:
     update_enemies()
     update_floatertext()
     update_scoreboard()
+    handle_grenades()
 
     # High score no shit sherlock
     highscoretext = font.render(f"High score: {HighestScore}", False, (100,100,100))
@@ -741,13 +771,14 @@ pygame.quit()
 """
 TODO add a bossfight (fish boss real)
 TODO improve the visual effects
-TODO fix the mine explosion behaving weirdly
 TODO add enemy variety
 TODO add background stains (when enemies get killed, goals destroyed, dashes dashed etc.) # Crazy
+TODO balance the grenades
 ------------------------------------
 DOING refactor the code to make it more readable
 DOING add variety to gameplay (somehow idk) 
 ------------------------------------
+DONE fix the mine explosion behaving weirdly | it was literally a rounding error :wideskull:
 DONE add kill combo bonuses
 DONE fix game freezing shortly after dying (reason unknown)
 DONE add a way to respawn LIKE WHY DIDN'T WE ADD THIS BEFORE
