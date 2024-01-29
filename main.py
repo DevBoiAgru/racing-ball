@@ -109,7 +109,7 @@ class Ball:
                 self.respawn()
 
             elif event.type == pygame.KEYDOWN and event.key == (pygame.K_g) and self.alive:
-                grenades_list.append({"x": self.x, "y": self.y, "x_vel": self.x_vel * 0.5, "y_vel": self.y_vel * 0.5, "y_acc": 0.1, "age": random.randint(-60, -20)})
+                grenades_list.append({"x": self.x, "y": self.y, "x_vel": self.x_vel * 0.5, "y_vel": self.y_vel * 0.5, "y_acc": 0.1, "age": random.randint(-90, -40)})
                 self.fuel -= 3.5
 
             # music switcher (very cool)
@@ -186,7 +186,7 @@ class Ball:
             self.x_vel /= 1.5
             self.y_vel /= 1.5
         if (keys_pressed[pygame.K_h]):
-            self.fuel = 9002
+            self.fuel = 2**31-1
 
         self.total_vel = math.sqrt(self.x_vel**2 + self.y_vel**2)
 
@@ -284,8 +284,8 @@ class Enemy(Ball):
                 if time.time() - last_kill_time <= combo_timeout:
                     combo_multiplier += 1
                     if combo_multiplier >= 2:
-                        scoreboard_list.append([f"Kill combo x{combo_multiplier} {250*combo_multiplier}", 0, (140, 60, 140)])
-                        score += 250*combo_multiplier
+                        scoreboard_list.append([f"Kill combo x{combo_multiplier} {250*combo_multiplier*1.2**combo_multiplier}", 0, (140, 60, 140)])
+                        score += 250*combo_multiplier*1.2**combo_multiplier
                 else:
                     combo_multiplier = 1
 
@@ -354,22 +354,24 @@ def update_floatertext():
         window.blit(floating_text[0], floating_text[1])
 
 def particle_update():
+    i = 0
     for particle in particle_list:
-        particle["age"] += int(random.random() < 0.85)
+        particle["age"] += int(random.random() < 0.80)
         if particle["age"] > particle["max_age"]:
-            particle_list.pop(particle_list.index(particle))
+            particle_list.pop(i)
     
         particle["y_vel"] += particle["fall_acc"]
         particle["x"] += particle["x_vel"]
         particle["y"] += particle["y_vel"]
 
         if (particle["tag"] == "create_subparticles") and frame % 2 == 0:
-            particle_list.append({"x": particle["x"], "y": particle["y"], "x_vel": 0, "y_vel": 0, "fall_acc": 0, "age": int(particle["age"]/2), "tag": None, "color": particle["color"], "max_age": particle["max_age"]*1.5, "radius": particle["radius"]})
+            particle_list.append({"x": particle["x"], "y": particle["y"], "x_vel": 0, "y_vel": 0, "fall_acc": 0, "age": int(particle["age"]/2), "tag": None, "color": particle["color"], "max_age": particle["max_age"]*1.25, "radius": particle["radius"]})
 
         pygame.draw.circle(window, (max(int(particle["color"][0] - particle["color"][0] * (particle["age"] / particle["max_age"])), 0), 
                                     max(int(particle["color"][1] - particle["color"][1] * (particle["age"] / particle["max_age"] * 1.5)), 0), 
                                     max(int(particle["color"][2] - particle["color"][2] * (particle["age"] / particle["max_age"] * 2.0)), 0)),
                                     (particle["x"], particle["y"]), particle["radius"] - particle["radius"] * (particle["age"] / particle["max_age"]))
+        i += 1
 
 def check_goal():
     global score, max_enemy_fuel, max_enemy_timer, playerball
@@ -461,7 +463,7 @@ def check_mine():
 
                 last_kill_time = time.time()
                 draw_floatertext("+411", 20, 2, (enemy.x, enemy.y))
-        create_particles(None, 1, {"x": mine["x"], "y": mine["y"]}, 0, 0, (255, 180, 0), 10, 133) 
+        create_particles(None, 1, {"x": mine["x"], "y": mine["y"]}, 0, 0, (255, 180, 0), 5, 166) 
         sfx_mine.play()
         mine["x"] = -500
         mine["y"] = -8000
@@ -556,15 +558,15 @@ def handle_grenades():
             grenades_list.pop(i)
             create_particles(None, 1, {"x": grenade["x"], "y": grenade["y"]}, 0, 0, (255, 180, 0), 10, 20) 
         for enemy in enemy_list:
-            if (((grenade["x"] - enemy.x)**2 + (grenade["y"] - enemy.y)**2)**0.5 < 70) and grenade["age"] > -15:
-                create_particles(None, 1, {"x": grenade["x"], "y": grenade["y"]}, 0, 0, (255, 180, 0), 10, 20)
+            if (((grenade["x"] - enemy.x)**2 + (grenade["y"] - enemy.y)**2)**0.5 < 30) and grenade["age"] > -15:
+                create_particles(None, 1, {"x": grenade["x"], "y": grenade["y"]}, 0, 0, (255, 180, 0), 5, 40)
                 grenades_list.pop(i) 
                 enemy.alive = False
                 enemy.fuel = 0
-                score += 740
-                scoreboard_list.append(["Bombed +740", 0, (255, 100, 0)])
+                score += 311
+                scoreboard_list.append(["Bombed +311", 0, (255, 100, 0)])
             
-        i += 0
+        i += 1
 
         window.blit(pygame.transform.rotate(grenade_sprite, calc_rotation([grenade["x_vel"], grenade["y_vel"]])-180), (grenade["x"], grenade["y"]))
 
@@ -580,7 +582,7 @@ enemy_dead_sprite  = pygame.image.load("assets/sprites/enemy_dead.png")
 destroyed_goal_sprite = pygame.image.load("assets/sprites/goal_destroyed.png")
 mine_sprite        = pygame.image.load("assets/sprites/mine.png")
 fish_sprite        = pygame.image.load("assets/sprites/fish.png")
-grenade_sprite        = pygame.image.load("assets/sprites/grenade.png")
+grenade_sprite     = pygame.image.load("assets/sprites/grenade.png")
 
 # Background, no shit sherlock
 bgscale = 1 # How big the background is, no shit sherlock
@@ -613,7 +615,7 @@ music_files = next(os.walk(music_path), (None, None, []))[2]
 music_files = [file for file in music_files if file.split(".")[-1] in ["mp3", "ogg", "wav"]]
 HighestScore = 0
 last_kill_time = 0
-combo_timeout = 5
+combo_timeout = 3.5
 combo_multiplier = 1
 grenades_list = []
 
@@ -632,7 +634,7 @@ sfx_explosion  = pygame.mixer.Sound("assets/sfx/explosion.wav")
 sfx_hit        = pygame.mixer.Sound("assets/sfx/hit.wav")
 sfx_mine       = pygame.mixer.Sound("assets/sfx/mine.wav")
 sfx_beep       = pygame.mixer.Sound("assets/sfx/beep.wav")
-pygame.mixer.music.load("assets/sfx/Lethal company boombox song 5.mp3")
+pygame.mixer.music.load("assets/sfx/GD Stay Inside Me.mp3")
 pygame.mixer.music.set_volume(2.0)
 
 clock = pygame.time.Clock()
@@ -773,7 +775,7 @@ TODO add a bossfight (fish boss real)
 TODO improve the visual effects
 TODO add enemy variety
 TODO add background stains (when enemies get killed, goals destroyed, dashes dashed etc.) # Crazy
-TODO balance the grenades
+TODO balance the grenades (or replace them with other projectiles)
 ------------------------------------
 DOING refactor the code to make it more readable
 DOING add variety to gameplay (somehow idk) 
