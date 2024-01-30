@@ -84,7 +84,6 @@ class Ball:
         max_enemy_timer = 4
         enemy_list = []
         score = 0
-        pygame.mixer.music.unpause()
         load_game()
 
     def handle_movement(self):
@@ -96,11 +95,12 @@ class Ball:
                 self.x_vel += 20 * (self.x_vel / self.total_vel)
                 self.y_vel += 20 * (self.y_vel / self.total_vel)
                 self.fuel = self.fuel - 3
-                create_particles("create_subparticles", 20, {"x": self.x, "y": self.y}, 3, 0.12, (100, 100, 255), 36, 5)
+                create_particles("create_subparticles", 15, {"x": self.x, "y": self.y}, 13, 0.03, (100, 100, 255), 8, 5)
                 self.iframes = max(self.iframes + 8, 8)
                 sfx_dash.play()
                 score += 25
                 scoreboard_list.append(["FAST +25", 0, (80, 80, 130)])
+                floating_text_list.append({"text": "+25", "size": 20, "duration": frame + 120, "position": (playerball.x, playerball.y), "color": (80, 80, 130)})
             
             elif event.type == pygame.KEYDOWN and event.key == (pygame.K_SPACE) and self.alive and mine["timer"] < -45:
                 create_mine()
@@ -109,61 +109,62 @@ class Ball:
                 self.respawn()
 
             elif event.type == pygame.KEYDOWN and event.key == (pygame.K_g) and self.alive:
-                grenades_list.append({"x": self.x, "y": self.y, "x_vel": self.x_vel * 0.5, "y_vel": self.y_vel * 0.5, "y_acc": 0.1, "age": random.randint(-90, -40)})
-                self.fuel -= 3.5
+                grenades_list.append({"x": self.x, "y": self.y, "x_vel": self.x_vel * 0.4, "y_vel": self.y_vel * 0.4, "y_acc": 0.1, "age": random.randint(-90, -40)})
+                grenades_list.append({"x": self.x, "y": self.y, "x_vel": self.x_vel * 0.6, "y_vel": self.y_vel * 0.6, "y_acc": 0.1, "age": random.randint(-90, -40)})
+                self.fuel -= 3
 
             # music switcher (very cool)
             elif event.type == pygame.KEYDOWN and event.key == (pygame.K_1):
                 music.unload()
                 music.load("assets/sfx/Lethal company boombox song 5.mp3")
                 display_text = "Now playing Lethal Company Boombox song"
-                draw_floatertext(display_text, 20, 2, (WIDTH/2 - len(display_text)*6, HEIGHT - 50), (255,255,255))
+                floating_text_list.append({"text:": display_text, "size": 20, "duration": frame + 120, "position": (WIDTH/2 - len(display_text)*6, HEIGHT - 50), "color": (255,255,255)})
                 music.play(loops=-1)
             
             elif event.type == pygame.KEYDOWN and event.key == (pygame.K_2):
                 music.unload()
                 music.load("assets/sfx/Electro-Light - Symbolism [NCS Release].mp3")
                 display_text = "Now playing Turi ip ip ip"
-                draw_floatertext(display_text, 20, 2, (WIDTH/2 - len(display_text)*6, HEIGHT - 50), (255,255,255))
+                floating_text_list.append({"text:": display_text, "size": 20, "duration": frame + 120, "position": (WIDTH/2 - len(display_text)*6, HEIGHT - 50), "color": (255,255,255)})
                 music.play(loops=-1, start=3)
 
             elif event.type == pygame.KEYDOWN and event.key == (pygame.K_3):
                 music.unload()
                 music.load("assets/sfx/HL2 Apprehension and Evasion.mp3")
                 display_text = "Now playing Half Life 2 Apprehension and Evasion"
-                draw_floatertext(display_text, 20, 2, (WIDTH/2 - len(display_text)*6, HEIGHT - 50), (255,255,255))
+                floating_text_list.append({"text:": display_text, "size": 20, "duration": frame + 120, "position": (WIDTH/2 - len(display_text)*6, HEIGHT - 50), "color": (255,255,255)})
                 music.play(loops=-1, start=10)
 
             elif event.type == pygame.KEYDOWN and event.key == (pygame.K_4):
                 music.unload()
                 music.load("assets/sfx/HL Credits Closing Theme.mp3")
                 display_text = "Now playing Half Life Closing Theme"
-                draw_floatertext(display_text, 20, 2, (WIDTH/2 - len(display_text)*6, HEIGHT - 50), (255,255,255))
+                floating_text_list.append({"text:": display_text, "size": 20, "duration": frame + 120, "position": (WIDTH/2 - len(display_text)*6, HEIGHT - 50), "color": (255,255,255)})
                 music.play(loops=-1)
 
             elif event.type == pygame.KEYDOWN and event.key == (pygame.K_5):
                 music.unload()
                 music.load("assets/sfx/Stray Error-22.mp3")
                 display_text = "Now playing Stray Error-22"
-                draw_floatertext(display_text, 20, 2, (WIDTH/2 - len(display_text)*6, HEIGHT - 50), (255,255,255))
+                floating_text_list.append({"text:": display_text, "size": 20, "duration": frame + 120, "position": (WIDTH/2 - len(display_text)*6, HEIGHT - 50), "color": (255,255,255)})
                 music.play(loops=-1)
 
             elif event.type == pygame.KEYDOWN and event.key == (pygame.K_6):
                 music.unload()
                 music.load("assets/sfx/Stray Trash Zone.mp3")
                 display_text = "Now playing Stray Trash Zone"
-                draw_floatertext(display_text, 20, 2, (WIDTH/2 - len(display_text)*6, HEIGHT - 50), (255,255,255))
+                floating_text_list.append({"text:": display_text, "size": 20, "duration": frame + 120, "position": (WIDTH/2 - len(display_text)*6, HEIGHT - 50), "color": (255,255,255)})
                 music.play(loops=-1, start=7)
 
             elif event.type == pygame.KEYDOWN and event.key == (pygame.K_7):
                 music.unload()
                 music.load("assets/sfx/GD Stay Inside Me.mp3")
                 display_text = "Now playing Geometry Dash Stay inside me"
-                draw_floatertext(display_text, 20, 2, (WIDTH/2 - len(display_text)*6, HEIGHT - 50), (255,255,255))
+                floating_text_list.append({"text:": display_text, "size": 20, "duration": frame + 120, "position": (WIDTH/2 - len(display_text)*6, HEIGHT - 50), "color": (255,255,255)})
                 music.play(loops=-1)
 
             elif event.type == pygame.KEYDOWN and event.key == (pygame.K_0):
-                CycleUserMusic()
+                cycle_user_music()
 
         keys_pressed = pygame.key.get_pressed()
         if (keys_pressed[pygame.K_UP] or keys_pressed[pygame.K_w]) and self.alive: 
@@ -189,25 +190,6 @@ class Ball:
             self.fuel = 2**31-1
 
         self.total_vel = math.sqrt(self.x_vel**2 + self.y_vel**2)
-
-        # LEGACY CODE
-
-        # if (keys_pressed[pygame.K_r]) and not self.alive:
-        #     self.respawn()
-        # if (keys_pressed[pygame.K_SPACE]) and self.alive :#and True: #MINE!!!!!!
-        #     create_mine()
-        # if (keys_pressed[pygame.K_LSHIFT]) and self.alive and (time.time() - last_dash > 2):
-        #     self.x_vel += (int(self.x_vel > 0) - 0.5) * 2 * 10
-        #     self.y_vel += (int(self.y_vel > 0) - 0.5) * 2 * 10
-        #     self.fuel = self.fuel - 3
-        #     create_particles("create_subparticles", 20, {"x": self.x, "y": self.y}, 3, 0.12, (100, 100, 255), 36, 5)
-        #     self.iframes_left = 20
-        #     sfx_dash.play()
-        #     self.can_dash = False
-        #     score += 25
-        #     scoreboard_list.append(["FAST +25", 0])
-        #     last_dash = time.time()
-
 
     def create_trail(self):
         if self.alive and self.accelerating: ball_trail_list.append({"x": self.x, "y": self.y, "age": 0, "active": True})
@@ -264,20 +246,21 @@ class Enemy(Ball):
                 self.accelerating = False
                 self.alive = False
                 score += 107
-                draw_floatertext(f"+{107}", 20, 2, (playerball.x, playerball.y), (160,80,80))
+                floating_text_list.append({"text": "+107", "size": 20, "duration": frame + 120, "position": (playerball.x, playerball.y), "color": (160, 80, 80)})
                 scoreboard_list.append(["Slaughtered +107", 0, (160, 80, 80)])
         
         if ((abs(playerball.x - self.x) < playerball.radius + self.radius) and (abs(playerball.y - self.y) < playerball.radius + self.radius) and self.alive) and playerball.iframes_left <= 0:
-            vel_diff = abs(playerball.total_vel - math.sqrt(self.x_vel**2 + self.y_vel**2))
-            if vel_diff > 24:
+            enemy_vel = math.sqrt(self.x_vel**2 + self.y_vel**2)
+            vel_diff = abs(playerball.total_vel - enemy_vel)
+            if vel_diff > 22 and playerball.total_vel >= enemy_vel:
                 self.alive = False  
                 create_particles(None, 8, {"x": self.x, "y": self.y}, 4, 0, (20, 52, 100), 50, 5)
                 sfx_enemydead.play()
                 self.x_vel = playerball.x_vel
                 self.y_vel = playerball.y_vel
                 playerball.fuel += 12.5
-                score += 352
-                draw_floatertext(f"+{352}", 20, 2, (playerball.x, playerball.y), (255, 0, 0))
+                score += 399
+                floating_text_list.append({"text": "+399", "size": 20, "duration": frame + 120, "position": (playerball.x, playerball.y), "color": (255, 0, 0)})
                 scoreboard_list.append(["DASHED +399", 0, (255, 0, 0)])
 
                 # Combo bombo  
@@ -297,7 +280,7 @@ class Enemy(Ball):
                     sfx_hit.play()  
                     create_particles(None, 10, {"x": playerball.x, "y": playerball.y}, 4, 0.15, (255, 255 ,255), 60, 5)
                     score -= 91
-                    draw_floatertext(f"-{91}", 20, 2, (playerball.x, playerball.y), (100,100,100))
+                    floating_text_list.append({"text": "-91", "size": 20, "duration": frame + 120, "position": (playerball.x, playerball.y), "color": (100, 100, 100)})
                     scoreboard_list.append(["skill issue -91", 0, (50, 50, 50)])
 
                     playerball.iframes = 20
@@ -324,7 +307,7 @@ def create_particles(tag, amount, pos, max_vel, fall_acc, color, max_age, radius
         particle = {"x": pos["x"]+random.randint(-radius, radius), "y": pos["y"]+random.randint(-radius, radius), "x_vel": max_vel * (random.random() - 0.5), "y_vel": max_vel * (random.random() - 0.5), "fall_acc": fall_acc, "age": 0, "tag": tag, "color": color, "max_age": max_age, "radius": radius}
         particle_list.append(particle)
 
-def Log(text :str, category: str, location: str):
+def Log(text: str, category: str, location: str):
     """ text: What is the error
         category: Is it a warning, an error, or something else?
         location: what part of the code is causing the error?"""
@@ -342,16 +325,18 @@ def Log(text :str, category: str, location: str):
     with open(f"{savepath}/log.txt", "a") as logfile:
         logfile.write(f"[{datetime.now()}] : [{category}] : [{location}] : {text} \n")
 
-def draw_floatertext(text :str = "Lorem ipsum", size :int = 20, duration :int = 2, position :tuple = (0,0), color :tuple = (100,100,100)):
-    global floating_text, floating_end
-    fontrender = pygame.font.SysFont("courier", size)
-    rend = fontrender.render(text, False, color)
-    floating_text = (rend, position)
-    floating_end = pygame.time.get_ticks() + duration*1000 # 1000 milliseconds = 1 second
-
 def update_floatertext():
-    if floating_text and pygame.time.get_ticks() < floating_end: 
-        window.blit(floating_text[0], floating_text[1])
+    i = 0
+    for text in floating_text_list:
+        if frame > text["duration"]: 
+            floating_text_list.pop(i)
+        else:
+            fontrender = pygame.font.SysFont("courier", text["size"])
+            rend = fontrender.render(text["text"], False, text["color"])
+            floating_text_list[i] = text
+
+            window.blit(rend, text["position"])
+        i+=1
 
 def particle_update():
     i = 0
@@ -379,34 +364,38 @@ def check_goal():
     if goal_destroyed["y"] > HEIGHT-12:
         goal_destroyed["y_vel"] = 0
     goal_destroyed["y"] += goal_destroyed["y_vel"]
-    create_particles(None, 1, {"x": goal_destroyed["x"]+12, "y": goal_destroyed["y"]+12}, 0, -0.05, (90, 90, 90), 60, 4)
+    create_particles(None, 1, {"x": goal_destroyed["x"]+12, "y": goal_destroyed["y"]+3}, 0, -0.05, (90, 90, 90), 20, 2)
 
     if (abs(playerball.x - goal_vars["x"]) < playerball.radius + goal_vars["radius"]) and (abs(playerball.y - goal_vars['y']) < playerball.radius + goal_vars["radius"]):
-        create_particles("create_subparticles", 12, {"x": goal_vars["x"], "y": goal_vars["y"]}, 3, 0.07, (255, 255, 0), 50, 6)
+        create_particles("None", 20, {"x": goal_vars["x"], "y": goal_vars["y"]}, 3, 0.03, (255, 255, 0), 50, 6)
         goal_destroyed["x"] = goal_vars["x"] - goal_vars["radius"]
         goal_destroyed["y"] = goal_vars["y"] - goal_vars["radius"]
         goal_destroyed["y_vel"] = 0
-        goal_vars["x"] = random.randint(10, WIDTH)
-        goal_vars["y"] = random.randint(10, HEIGHT)
         if not playerball.alive: 
-            playerball.alive = True;
-            pygame.mixer.music.unpause()
+            playerball.alive = True
+            score += 640
+            floating_text_list.append({"text": "+640", "size": 20, "duration": frame + 120, "position": (playerball.x, playerball.y), "color": (120, 120, 180)})
+            scoreboard_list.append(["REBIRTH +640", 0, (120, 120, 160)])
 
         if playerball.total_vel > 15:
+            create_particles("create_subparticles", 7, {"x": goal_vars["x"], "y": goal_vars["y"]}, 8, 0.02, (255, 255, 0), 20, 6)
             playerball.fuel += 13
             score += 242
-            draw_floatertext("+242", 20, 2, (playerball.x, playerball.y), (180, 180, 0))
+            floating_text_list.append({"text": "+242", "size": 20, "duration": frame + 120, "position": (playerball.x, playerball.y), "color": (180, 180, 0)})
             scoreboard_list.append(["QUICKFUEL +242", 0, (180, 180, 0)])
         else:
             playerball.fuel = min(60, playerball.fuel + 6.3)
             score += 127
-            draw_floatertext(f"+{127}", 20, 2, (playerball.x, playerball.y), (130, 130, 70))
+            floating_text_list.append({"text": "+127", "size": 20, "duration": frame + 120, "position": (playerball.x, playerball.y), "color": (130, 130, 70)})
             scoreboard_list.append(["Refuel +127", 0, (130, 130, 70)])
 
         sfx_explosion.play()
         max_enemy_fuel *= 1.125
         max_enemy_timer *= 0.925
         max_enemy_timer += 0.175
+
+        goal_vars["x"] = random.randint(10, WIDTH-10)
+        goal_vars["y"] = random.randint(10, HEIGHT-10)
 
 def create_enemies():
     global enemy_timer, max_enemy_fuel, max_enemy_timer
@@ -446,7 +435,7 @@ def check_mine():
         sfx_beep.play()
     if mine["timer"] == 0:
         for enemy in enemy_list:
-            if ((mine["x"] - enemy.x)**2 + (mine["y"] - enemy.y)**2)**0.5 < 133:
+            if (((mine["x"] - enemy.x)**2 + (mine["y"] - enemy.y)**2)**0.5 < 133) and enemy.alive:
                 enemy.alive = False
                 enemy.fuel = 0
                 score += 411
@@ -456,13 +445,12 @@ def check_mine():
                 if time.time() - last_kill_time <= combo_timeout:
                     combo_multiplier += 1
                     if combo_multiplier >= 2:
-                        scoreboard_list.append([f"Kill combo x{combo_multiplier} {250*combo_multiplier}", 0, (140, 80, 140)])
-                        score += 250*combo_multiplier
+                        scoreboard_list.append([f"Kill combo x{combo_multiplier} {250*combo_multiplier*1.2*combo_multiplier}", 0, (140, 80, 140)])
+                        score += 250*combo_multiplier*1.2**combo_multiplier
                 else:
                     combo_multiplier = 1
 
-                last_kill_time = time.time()
-                draw_floatertext("+411", 20, 2, (enemy.x, enemy.y))
+                floating_text_list.append({"text": "+411", "size": 20, "duration": frame + 120, "position": (enemy.x, enemy.y), "color": (255, 255, 0)})
         create_particles(None, 1, {"x": mine["x"], "y": mine["y"]}, 0, 0, (255, 180, 0), 5, 166) 
         sfx_mine.play()
         mine["x"] = -500
@@ -528,7 +516,7 @@ def update_scoreboard():
         window.blit(text, (WIDTH-230, 95 + 15*i))
         i += 1
 
-def CycleUserMusic():
+def cycle_user_music():
     global musicindex, music_files
     try:
         if len(music_files) > 0:
@@ -543,8 +531,9 @@ def CycleUserMusic():
         else:
             display_text = "No music files found."
     except:
+
         display_text = "Couldn't find music in the music directory"
-    draw_floatertext(display_text, 20, 2, (WIDTH/2 - len(display_text)*6, HEIGHT - 50), (255,255,255))
+    floating_text_list.append({"text": display_text, "size": 20, "duration": frame + 120, "position": (WIDTH/2 - len(display_text)*6, HEIGHT - 50), "color": (255,255,255)})
     
 def handle_grenades():
     global score
@@ -556,15 +545,18 @@ def handle_grenades():
         grenade["age"] += 1
         if grenade["age"] >= 0:
             grenades_list.pop(i)
-            create_particles(None, 1, {"x": grenade["x"], "y": grenade["y"]}, 0, 0, (255, 180, 0), 10, 20) 
+            create_particles(None, 1, {"x": grenade["x"], "y": grenade["y"]}, 0, 0, (255, 180, 0), 5, 40) 
+            sfx_mine.play()
+            continue
         for enemy in enemy_list:
-            if (((grenade["x"] - enemy.x)**2 + (grenade["y"] - enemy.y)**2)**0.5 < 30) and grenade["age"] > -15:
+            if (((grenade["x"] - enemy.x)**2 + (grenade["y"] - enemy.y)**2)**0.5 < 30) and grenade["age"] > -25 and enemy.alive:
                 create_particles(None, 1, {"x": grenade["x"], "y": grenade["y"]}, 0, 0, (255, 180, 0), 5, 40)
                 grenades_list.pop(i) 
                 enemy.alive = False
                 enemy.fuel = 0
                 score += 311
                 scoreboard_list.append(["Bombed +311", 0, (255, 100, 0)])
+                sfx_mine.play()
             
         i += 1
 
@@ -572,7 +564,7 @@ def handle_grenades():
 
 global WIDTH, HEIGHT; WIDTH, HEIGHT = 1280, 720
 window = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("I wokup inanu bugatti")
+pygame.display.set_caption(random.choice(["I wokup inanew bugatti", "Don't forget to tell xenonmite_ his art is shid", "Racist baller", "⚪🟡🔴", "Devboi please do not use pascal case", "If your high score is less than 20000, then it's a skill issue"]))
 
 ball_sprite        = pygame.image.load("assets/sprites/ball.png")
 ball_active_sprite = pygame.image.load("assets/sprites/ball_active.png")
@@ -583,10 +575,7 @@ destroyed_goal_sprite = pygame.image.load("assets/sprites/goal_destroyed.png")
 mine_sprite        = pygame.image.load("assets/sprites/mine.png")
 fish_sprite        = pygame.image.load("assets/sprites/fish.png")
 grenade_sprite     = pygame.image.load("assets/sprites/grenade.png")
-
-# Background, no shit sherlock
-bgscale = 1 # How big the background is, no shit sherlock
-bgimage = pygame.transform.scale_by(pygame.image.load("assets/sprites/background.png"), bgscale)
+bg                 = pygame.image.load("assets/sprites/background.png")
 
 #ball_vars = {"x": WIDTH/2, "y": HEIGHT/2, "fuel": 30, "x_vel": 0, "y_vel": 0, "x_acc": 1/3, "y_acc": 0.75, "self_gravity": 0.2, "alive": True, "radius": 6, "accelerating": False, "iframes_left": 0}
 goal_vars = {"x": random.randint(10, HEIGHT-10), "y": random.randint(10, HEIGHT-10), "radius": 12}
@@ -620,8 +609,7 @@ combo_multiplier = 1
 grenades_list = []
 
 # Floating text, no shit sherlock
-floating_text = None    # Set text to none because we don't need any text at startup, no shit sherlock
-floating_end = 0        # Default kill time for the text. This is overwritten when the function is called
+floating_text_list = []    # Set text to none because we don't need any text at startup, no shit sherlock
 dead_font = pygame.font.SysFont("courier", 50)
 respawn_text = dead_font.render("Dead. Press 'R' to respawn", False, (100, 100, 100))
 
@@ -635,7 +623,6 @@ sfx_hit        = pygame.mixer.Sound("assets/sfx/hit.wav")
 sfx_mine       = pygame.mixer.Sound("assets/sfx/mine.wav")
 sfx_beep       = pygame.mixer.Sound("assets/sfx/beep.wav")
 pygame.mixer.music.load("assets/sfx/GD Stay Inside Me.mp3")
-pygame.mixer.music.set_volume(2.0)
 
 clock = pygame.time.Clock()
 font = pygame.font.SysFont("Courier New", 18)
@@ -657,7 +644,7 @@ while running:
     # window.fill((0, 0, 0)) # Do we still need this? Lmfao no but let's keep this line for funni
 
     # Blit background, no shit sherlock
-    window.blit(bgimage, (0,0))
+    window.blit(bg, (0,0))
 
     playerball.accelerating = False
     playerball.fuel -= fuel_consumption
@@ -665,6 +652,7 @@ while running:
     playerball.iframes -= 1
     check_fps()
     pygame.draw.circle(window, (24, 16, 0), (mine["x"], mine["y"]), 100)
+    update_floatertext()
     check_goal()
     check_mine()
     update_enemies()
@@ -689,48 +677,7 @@ while running:
     #              ^ That line was written by a person with even bigger skill issues
     #                   f^ i REALLY hate how this person writes python code
     #                       ^ I will continue using PascalCase cry about it lol xd
-
-    # Premature Optimization Monument. Say your prayers here.
-    # Goofy optimisation. No loop is better than loop.
-    # t1=     "║"
-    # t2=    f'╠═[ x ]═[ {int(ball_vars["x"])} ]'
-    # t3=    f'╠═[ y ]═[ {HEIGHT - int(ball_vars["y"])} ]'
-    # t4=    f'╠═[ f ]═[ {max(round(ball_vars["fuel"], 1), 0)} ] ← !!'
-    # t5=    f'╠═[ X ]═[ {round(ball_vars["x_speed"], 2)} ]'
-    # t6=    f'╠═[ Y ]═[ {-round(ball_vars["y_speed"], 2)} ]'
-    # t7=    f'╠═[ i ]═[ {max(ball_vars["iframes_left"], 0)} ]'
-    # t8=    f'╠═[ E ]═[ {len(enemy_list)} ]'
-    # t9=    f'╠═[ e ]═[ {round(enemy_timer, 2)} ]'
-    # t10=   f'╠═[ m ]═[ {round(max_enemy_fuel, 1)} ]'
-    # t11=   f'╠═[ S ]═[ {score} ]'
-    # t12=   f'╠═[ p ]═[ {len(particle_list)} ]'
-    # t13=    '╝ '
-    # text1 = font.render(t1, False, (100, 100, 100))
-    # window.blit(text1, (0, 20 * (1) - 20))
-    # text2 = font.render(t2, False, (100, 100, 100))
-    # window.blit(text2, (0, 20 * (2) - 20))
-    # text3 = font.render(t3, False, (100, 100, 100))
-    # window.blit(text3, (0, 20 * (3) - 20))
-    # text4 = font.render(t4, False, (100, 100, 100))
-    # window.blit(text4, (0, 20 * (4) - 20))
-    # text5 = font.render(t5, False, (100, 100, 100))
-    # window.blit(text5, (0, 20 * (5) - 20))
-    # text6 = font.render(t6, False, (100, 100, 100))
-    # window.blit(text6, (0, 20 * (6) - 20))
-    # text7 = font.render(t7, False, (100, 100, 100))
-    # window.blit(text7, (0, 20 * (7) - 20))
-    # text8 = font.render(t8, False, (100, 100, 100))
-    # window.blit(text8, (0, 20 * (8) - 20))
-    # text9 = font.render(t9, False, (100, 100, 100))
-    # window.blit(text9, (0, 20 * (9) - 20))
-    # text10 = font.render(t10, False, (100, 100, 100))
-    # window.blit(text10, (0, 20 * (10) - 20))
-    # text11 = font.render(t11, False, (100, 100, 100))
-    # window.blit(text11, (0, 20 * (11) - 20))
-    # text12 = font.render(t12, False, (100, 100, 100))
-    # window.blit(text12, (0, 20 * (12) - 20))
-    # text13 = font.render(t13, False, (100, 100, 100))
-    # window.blit(text13, (0, 20 * (13) - 20))
+    #                            ^ i will cancel you on twitter
 
     strings = [
          "║║        ║ ╚═╗       ║",
@@ -776,6 +723,9 @@ TODO improve the visual effects
 TODO add enemy variety
 TODO add background stains (when enemies get killed, goals destroyed, dashes dashed etc.) # Crazy
 TODO balance the grenades (or replace them with other projectiles)
+TODO add more weaponry (perhaps shotguns)
+TODO fix occasional IndexError: pop from empty list on line 547 or 553 i forgor which one of them causes the error
+TODO fix floater texts destroying the fps
 ------------------------------------
 DOING refactor the code to make it more readable
 DOING add variety to gameplay (somehow idk) 
@@ -790,4 +740,4 @@ DONE add a simple background instead of the black void
 DONE add sfx and bgm
 DONE stylize the scoreboard
 """
-# j <- literally the only instance of this letter in the entire code :skull:
+# j <- literally the least used letter in the entire code :skull:
