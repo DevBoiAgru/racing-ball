@@ -663,7 +663,7 @@ while running:
     check_goal()
     check_mine()
     update_enemies()
-    update_floatertext()
+    update_floatertext() # truly a devilish line lmfaoo
     update_scoreboard()
     handle_grenades()
 
