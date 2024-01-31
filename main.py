@@ -89,6 +89,7 @@ class Ball:
     def handle_movement(self):
         global score
         global last_dash
+        global user_fps
         for event in self.PygameEvents:
             if event.type == pygame.KEYDOWN and event.key == (pygame.K_LSHIFT) and self.alive:
                 self.total_vel = math.sqrt(self.x_vel**2 + self.y_vel**2)
@@ -112,6 +113,12 @@ class Ball:
                 grenades_list.append({"x": self.x, "y": self.y, "x_vel": self.x_vel * 0.4, "y_vel": self.y_vel * 0.4, "y_acc": 0.1, "age": random.randint(-90, -40)})
                 grenades_list.append({"x": self.x, "y": self.y, "x_vel": self.x_vel * 0.6, "y_vel": self.y_vel * 0.6, "y_acc": 0.1, "age": random.randint(-90, -40)})
                 self.fuel -= 3
+
+            elif event.type == pygame.KEYDOWN and event.key == (pygame.K_EQUALS):
+                user_fps += 6
+
+            elif event.type == pygame.KEYDOWN and event.key == (pygame.K_MINUS):
+                user_fps -= 6
 
             # music switcher (very cool)
             elif event.type == pygame.KEYDOWN and event.key == (pygame.K_1):
@@ -464,7 +471,7 @@ def check_fps():
     fps = 1/time_delta
     fps_list.append(fps)
     if len(fps_list) > 256: fps_list.pop(0)
-    fps_string = f"time since last frame: {round(time_delta, 3)} ({round(fps, 1)} fps; {round(np.mean(fps_list), 1)} average; {round(max(fps_list), 1)} max; {round(min(fps_list), 1)} min)"
+    fps_string = f"time since last frame: {round(time_delta, 3)} ({round(fps, 1)} fps; {round(np.mean(fps_list), 1)} avg; {round(max(fps_list), 1)} max; {round(min(fps_list), 1)} min; {user_fps} current max)"
     last_fps_check_time = current_time
 
 def load_game() -> None:
@@ -607,6 +614,7 @@ last_kill_time = 0
 combo_timeout = 3.5
 combo_multiplier = 1
 grenades_list = []
+global user_fps; user_fps = 60
 
 # Floating text, no shit sherlock
 floating_text_list = []    # Set text to none because we don't need any text at startup, no shit sherlock
@@ -652,7 +660,6 @@ while running:
     playerball.iframes -= 1
     check_fps()
     pygame.draw.circle(window, (24, 16, 0), (mine["x"], mine["y"]), 100)
-    update_floatertext()
     check_goal()
     check_mine()
     update_enemies()
@@ -713,7 +720,7 @@ while running:
 
     frame += 1
     pygame.display.flip()
-    clock.tick(60)
+    clock.tick(user_fps)
 
 pygame.quit()
 
