@@ -572,6 +572,7 @@ def handle_grenades():
 global WIDTH, HEIGHT; WIDTH, HEIGHT = 1280, 720
 window = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption(random.choice(["I wokup inanew bugatti", "Don't forget to tell xenonmite_ his art is shid", "Racist baller", "⚪🟡🔴", "Devboi please do not use pascal case", "If your high score is less than 20000, then it's a skill issue"]))
+if random.randint(0,1000) == 69: quit() # 😊
 
 ball_sprite        = pygame.image.load("assets/sprites/ball.png")
 ball_active_sprite = pygame.image.load("assets/sprites/ball_active.png")
