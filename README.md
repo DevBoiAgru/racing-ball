@@ -12,3 +12,6 @@ you are a white orb, your task is to survive for as long as possible by collecti
     <li>- / = keys - Change FPS</li>
     <li>Number keys - Change Music</li>
 </ul>
+
+## How to update to the newest github version without cloning
+Run updater.py
