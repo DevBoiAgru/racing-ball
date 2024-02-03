@@ -124,50 +124,43 @@ class Ball:
             elif event.type == pygame.KEYDOWN and event.key == (pygame.K_1):
                 music.unload()
                 music.load("assets/sfx/Lethal company boombox song 5.mp3")
-                display_text = "Now playing Lethal Company Boombox song"
-                floating_text_list.append({"text:": display_text, "size": 20, "duration": frame + 120, "position": (WIDTH/2 - len(display_text)*6, HEIGHT - 50), "color": (255,255,255)})
+                floating_text_list.append({"text": "Now playing Lethal Company Boombox song 5", "size": 20, "duration": frame + 120, "position": (50, HEIGHT - 50), "color": (255,255,255)})
                 music.play(loops=-1)
             
             elif event.type == pygame.KEYDOWN and event.key == (pygame.K_2):
                 music.unload()
                 music.load("assets/sfx/Electro-Light - Symbolism [NCS Release].mp3")
-                display_text = "Now playing Turi ip ip ip"
-                floating_text_list.append({"text:": display_text, "size": 20, "duration": frame + 120, "position": (WIDTH/2 - len(display_text)*6, HEIGHT - 50), "color": (255,255,255)})
+                floating_text_list.append({"text": "Now playing Turi ip ip ip", "size": 20, "duration": frame + 120, "position": (50, HEIGHT - 50), "color": (255,255,255)})
                 music.play(loops=-1, start=3)
 
             elif event.type == pygame.KEYDOWN and event.key == (pygame.K_3):
                 music.unload()
                 music.load("assets/sfx/HL2 Apprehension and Evasion.mp3")
-                display_text = "Now playing Half Life 2 Apprehension and Evasion"
-                floating_text_list.append({"text:": display_text, "size": 20, "duration": frame + 120, "position": (WIDTH/2 - len(display_text)*6, HEIGHT - 50), "color": (255,255,255)})
+                floating_text_list.append({"text": "Now playing Half Life 2 Apprehension and Evasion", "size": 20, "duration": frame + 120, "position": (50, HEIGHT - 50), "color": (255,255,255)})
                 music.play(loops=-1, start=10)
 
             elif event.type == pygame.KEYDOWN and event.key == (pygame.K_4):
                 music.unload()
                 music.load("assets/sfx/HL Credits Closing Theme.mp3")
-                display_text = "Now playing Half Life Closing Theme"
-                floating_text_list.append({"text:": display_text, "size": 20, "duration": frame + 120, "position": (WIDTH/2 - len(display_text)*6, HEIGHT - 50), "color": (255,255,255)})
+                floating_text_list.append({"text": "Now playing Half Life Closing Theme", "size": 20, "duration": frame + 120, "position": (50, HEIGHT - 50), "color": (255,255,255)})
                 music.play(loops=-1)
 
             elif event.type == pygame.KEYDOWN and event.key == (pygame.K_5):
                 music.unload()
                 music.load("assets/sfx/Stray Error-22.mp3")
-                display_text = "Now playing Stray Error-22"
-                floating_text_list.append({"text:": display_text, "size": 20, "duration": frame + 120, "position": (WIDTH/2 - len(display_text)*6, HEIGHT - 50), "color": (255,255,255)})
+                floating_text_list.append({"text": "Now playing Stray Error-22", "size": 20, "duration": frame + 120, "position": (50, HEIGHT - 50), "color": (255,255,255)})
                 music.play(loops=-1)
 
             elif event.type == pygame.KEYDOWN and event.key == (pygame.K_6):
                 music.unload()
-                music.load("assets/sfx/Stray Trash Zone.mp3")
-                display_text = "Now playing Stray Trash Zone"
-                floating_text_list.append({"text:": display_text, "size": 20, "duration": frame + 120, "position": (WIDTH/2 - len(display_text)*6, HEIGHT - 50), "color": (255,255,255)})
+                music.load("assets/sfx/Stray Error-22.mp3")
+                floating_text_list.append({"text": "Now playing Stray Trash Zone", "size": 20, "duration": frame + 120, "position": (50, HEIGHT - 50), "color": (255,255,255)})
                 music.play(loops=-1, start=7)
 
             elif event.type == pygame.KEYDOWN and event.key == (pygame.K_7):
                 music.unload()
                 music.load("assets/sfx/GD Stay Inside Me.mp3")
-                display_text = "Now playing Geometry Dash Stay inside me"
-                floating_text_list.append({"text:": display_text, "size": 20, "duration": frame + 120, "position": (WIDTH/2 - len(display_text)*6, HEIGHT - 50), "color": (255,255,255)})
+                floating_text_list.append({"text": "Now playing Geometry Dash Stay inside me", "size": 20, "duration": frame + 120, "position": (50, HEIGHT - 50), "color": (255,255,255)})
                 music.play(loops=-1)
 
             elif event.type == pygame.KEYDOWN and event.key == (pygame.K_0):
@@ -572,7 +565,6 @@ def handle_grenades():
 global WIDTH, HEIGHT; WIDTH, HEIGHT = 1280, 720
 window = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption(random.choice(["I wokup inanew bugatti", "Don't forget to tell xenonmite_ his art is shid", "Racist baller", "⚪🟡🔴", "Devboi please do not use pascal case", "If your high score is less than 20000, then it's a skill issue"]))
-if random.randint(0,1000) == 69: quit() # 😊
 
 ball_sprite        = pygame.image.load("assets/sprites/ball.png")
 ball_active_sprite = pygame.image.load("assets/sprites/ball_active.png")
@@ -631,6 +623,7 @@ sfx_hit        = pygame.mixer.Sound("assets/sfx/hit.wav")
 sfx_mine       = pygame.mixer.Sound("assets/sfx/mine.wav")
 sfx_beep       = pygame.mixer.Sound("assets/sfx/beep.wav")
 pygame.mixer.music.load("assets/sfx/GD Stay Inside Me.mp3")
+pygame.mixer.music.set_volume(0.2)
 
 clock = pygame.time.Clock()
 font = pygame.font.SysFont("Courier New", 18)
@@ -663,7 +656,7 @@ while running:
     check_goal()
     check_mine()
     update_enemies()
-    update_floatertext() # truly a devilish line lmfaoo
+    update_floatertext()
     update_scoreboard()
     handle_grenades()
 
