@@ -2,7 +2,9 @@
 .vs/*
 # Save files
 Saves/
-updater.py
+
+# File update and integrity check
+locals_checksum.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
