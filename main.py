@@ -585,7 +585,6 @@ fish_sprite        = pygame.image.load("assets/sprites/fish.png")
 grenade_sprite     = pygame.image.load("assets/sprites/grenade.png")
 bg                 = pygame.image.load("assets/sprites/background.png")
 
-#ball_vars = {"x": WIDTH/2, "y": HEIGHT/2, "fuel": 30, "x_vel": 0, "y_vel": 0, "x_acc": 1/3, "y_acc": 0.75, "self_gravity": 0.2, "alive": True, "radius": 6, "accelerating": False, "iframes_left": 0}
 goal_vars = {"x": random.randint(10, HEIGHT-10), "y": random.randint(10, HEIGHT-10), "radius": 12}
 fuel_consumption = 1/240
 can_dash = True

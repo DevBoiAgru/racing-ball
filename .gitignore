@@ -2,6 +2,7 @@
 .vs/*
 # Save files
 Saves/
+updater.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
