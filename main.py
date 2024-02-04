@@ -377,6 +377,7 @@ def check_goal():
             score += 640
             floating_text_list.append({"text": "+640", "size": 20, "duration": frame + 120, "position": (playerball.x, playerball.y), "color": (120, 120, 180)})
             scoreboard_list.append(["REBIRTH +640", 0, (120, 120, 160)])
+            sfx_revive.play()
 
         if playerball.total_vel > 15:
             create_particles("create_subparticles", 7, {"x": goal_vars["x"], "y": goal_vars["y"]}, 8, 0.02, (255, 255, 0), 20, 6)
@@ -384,6 +385,7 @@ def check_goal():
             score += 242
             floating_text_list.append({"text": "+242", "size": 20, "duration": frame + 120, "position": (playerball.x, playerball.y), "color": (180, 180, 0)})
             scoreboard_list.append(["QUICKFUEL +242", 0, (180, 180, 0)])
+            sfx_quickfuel.play()
         else:
             playerball.fuel = min(60, playerball.fuel + 6.3)
             score += 127
@@ -626,8 +628,9 @@ sfx_mine       = pygame.mixer.Sound("assets/sfx/mine.wav")
 sfx_beep       = pygame.mixer.Sound("assets/sfx/beep.wav")
 sfx_grenade_spawn = pygame.mixer.Sound("assets/sfx/grenade_spawn.wav")
 sfx_mine_spawn = pygame.mixer.Sound("assets/sfx/mine_spawn.wav")
+sfx_revive     = pygame.mixer.Sound("assets/sfx/revive.mp3")
+sfx_quickfuel  = pygame.mixer.Sound("assets/sfx/quickfuel.wav")
 pygame.mixer.music.load("assets/sfx/GD Stay Inside Me.mp3")
-pygame.mixer.music.set_volume(0.5)
 
 clock = pygame.time.Clock()
 font = pygame.font.SysFont("Courier New", 18)
