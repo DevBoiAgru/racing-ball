@@ -113,6 +113,7 @@ class Ball:
                 grenades_list.append({"x": self.x, "y": self.y, "x_vel": self.x_vel * 0.4, "y_vel": self.y_vel * 0.4, "y_acc": 0.1, "age": random.randint(-90, -40)})
                 grenades_list.append({"x": self.x, "y": self.y, "x_vel": self.x_vel * 0.6, "y_vel": self.y_vel * 0.6, "y_acc": 0.1, "age": random.randint(-90, -40)})
                 self.fuel -= 3
+                sfx_grenade_spawn.play()
 
             elif event.type == pygame.KEYDOWN and event.key == (pygame.K_EQUALS):
                 user_fps += 6
@@ -426,7 +427,8 @@ def calc_rotation(velocity: tuple()) -> float:
 def create_mine():
     mine["x"] = playerball.x - playerball.radius
     mine["y"] = playerball.y - playerball.radius
-    mine["timer"] = 81
+    mine["timer"] = 80
+    sfx_mine_spawn.play()
 
 def check_mine():
     global score, last_kill_time, combo_timeout, combo_multiplier
@@ -622,8 +624,10 @@ sfx_explosion  = pygame.mixer.Sound("assets/sfx/explosion.wav")
 sfx_hit        = pygame.mixer.Sound("assets/sfx/hit.wav")
 sfx_mine       = pygame.mixer.Sound("assets/sfx/mine.wav")
 sfx_beep       = pygame.mixer.Sound("assets/sfx/beep.wav")
+sfx_grenade_spawn = pygame.mixer.Sound("assets/sfx/grenade_spawn.wav")
+sfx_mine_spawn = pygame.mixer.Sound("assets/sfx/mine_spawn.wav")
 pygame.mixer.music.load("assets/sfx/GD Stay Inside Me.mp3")
-pygame.mixer.music.set_volume(0.2)
+pygame.mixer.music.set_volume(0.5)
 
 clock = pygame.time.Clock()
 font = pygame.font.SysFont("Courier New", 18)
