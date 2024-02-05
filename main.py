@@ -392,7 +392,7 @@ def check_goal():
             floating_text_list.append({"text": "+127", "size": 20, "duration": frame + 120, "position": (playerball.x, playerball.y), "color": (130, 130, 70)})
             scoreboard_list.append(["Refuel +127", 0, (130, 130, 70)])
 
-        sfx_explosion.play()
+        random.choice(sfx_explosion_list).play()
         max_enemy_fuel *= 1.125
         max_enemy_timer *= 0.925
         max_enemy_timer += 0.175
@@ -456,7 +456,7 @@ def check_mine():
 
                 floating_text_list.append({"text": "+411", "size": 20, "duration": frame + 120, "position": (enemy.x, enemy.y), "color": (255, 255, 0)})
         create_particles(None, 1, {"x": mine["x"], "y": mine["y"]}, 0, 0, (255, 180, 0), 5, 166) 
-        sfx_mine.play()
+        random.choice(sfx_mine_list).play()
         mine["x"] = -500
         mine["y"] = -8000
 
@@ -550,7 +550,7 @@ def handle_grenades():
         if grenade["age"] >= 0:
             grenades_list.pop(i)
             create_particles(None, 1, {"x": grenade["x"], "y": grenade["y"]}, 0, 0, (255, 180, 0), 5, 40) 
-            sfx_mine.play()
+            random.choice(sfx_mine_list).play()
             continue
         for enemy in enemy_list:
             if (((grenade["x"] - enemy.x)**2 + (grenade["y"] - enemy.y)**2)**0.5 < 30) and grenade["age"] > -25 and enemy.alive:
@@ -560,7 +560,7 @@ def handle_grenades():
                 enemy.fuel = 0
                 score += 311
                 scoreboard_list.append(["Bombed +311", 0, (255, 100, 0)])
-                sfx_mine.play()
+                random.choice(sfx_mine_list).play()
             
         i += 1
 
@@ -622,15 +622,22 @@ sfx_bounce     = pygame.mixer.Sound("assets/sfx/bounce.wav")
 sfx_dash       = pygame.mixer.Sound("assets/sfx/dash.wav")
 sfx_enemydead  = pygame.mixer.Sound("assets/sfx/enemydead.wav")
 sfx_enemyspawn = pygame.mixer.Sound("assets/sfx/enemyspawn.wav")
-sfx_explosion  = pygame.mixer.Sound("assets/sfx/explosion.wav")
+sfx_explosion0 = pygame.mixer.Sound("assets/sfx/explosion0.wav")
+sfx_explosion1 = pygame.mixer.Sound("assets/sfx/explosion1.wav")
 sfx_hit        = pygame.mixer.Sound("assets/sfx/hit.wav")
-sfx_mine       = pygame.mixer.Sound("assets/sfx/mine.wav")
+sfx_mine0      = pygame.mixer.Sound("assets/sfx/mine0.wav")
+sfx_mine1      = pygame.mixer.Sound("assets/sfx/mine1.wav")
+sfx_mine2      = pygame.mixer.Sound("assets/sfx/mine2.wav")
+sfx_mine3      = pygame.mixer.Sound("assets/sfx/mine3.wav")
+sfx_mine4      = pygame.mixer.Sound("assets/sfx/mine4.wav")
 sfx_beep       = pygame.mixer.Sound("assets/sfx/beep.wav")
-sfx_grenade_spawn = pygame.mixer.Sound("assets/sfx/grenade_spawn.wav")
+sfx_grenade_spawn  = pygame.mixer.Sound("assets/sfx/grenade_spawn.wav")
 sfx_mine_spawn = pygame.mixer.Sound("assets/sfx/mine_spawn.wav")
 sfx_revive     = pygame.mixer.Sound("assets/sfx/revive.mp3")
 sfx_quickfuel  = pygame.mixer.Sound("assets/sfx/quickfuel.wav")
 pygame.mixer.music.load("assets/sfx/GD Stay Inside Me.mp3")
+sfx_mine_list  = [sfx_mine0, sfx_mine1, sfx_mine2, sfx_mine3, sfx_mine4]
+sfx_explosion_list = [sfx_explosion0, sfx_explosion1]
 
 clock = pygame.time.Clock()
 font = pygame.font.SysFont("Courier New", 18)
