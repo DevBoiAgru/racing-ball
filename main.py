@@ -302,6 +302,27 @@ class Enemy(Ball):
         if (not self.alive) and (abs(self.y_vel) < 0.3) and (abs(self.x_vel) < 0.3):
             enemy_list.pop(enemy_list.index(self))
     
+# thanks to python.org for the code
+class spritesheet(object):
+    def __init__(self, filename):
+        self.sheet = pygame.image.load(filename)
+    # Load a specific image from a specific rectangle
+    def image_at(self, rectangle):
+        "Loads image from x,y,x+offset,y+offset"
+        rect = pygame.Rect(rectangle)
+        image = pygame.Surface(rect.size)
+        image.blit(self.sheet, (0, 0), rect)
+        return image
+    # Load a whole bunch of images and return them as a list
+    def images_at(self, rects, colorkey = None):
+        "Loads multiple images, supply a list of coordinates" 
+        return [self.image_at(rect, colorkey) for rect in rects]
+    # Load a whole strip of images
+    def load_strip(self, rect, image_count, colorkey = None):
+        "Loads a strip of images and returns them as a list"
+        tups = [(rect[0]+rect[2]*x, rect[1], rect[2], rect[3])
+                for x in range(image_count)]
+        return self.images_at(tups, colorkey)
 
 def create_particles(tag, amount, pos, max_vel, fall_acc, color, max_age, radius):
     for _ in range(random.randint(math.ceil(amount/2), amount)):
@@ -415,8 +436,7 @@ def update_enemies():
     for enemy in enemy_list:
         enemy.update_enemy()
 
-# all it does is fuck up the sprite
-def calc_rotation(velocity: tuple()) -> float:
+def calc_rotation(velocity: tuple) -> float:
     """ Input velocity in form of a tuple with 2 elements, x velocity and y velocity.
         Right side positive, upwards negative."""
     velocity_x = velocity[0]
@@ -546,6 +566,23 @@ def handle_grenades():
         grenade["y_vel"] += grenade["y_acc"]
         grenade["x"] += grenade["x_vel"] 
         grenade["y"] += grenade["y_vel"]
+
+        if grenade["x"] > WIDTH:
+            grenade["x_vel"] *= -1
+            grenade["x"] = WIDTH-4
+
+        if grenade["x"] < 0:
+            grenade["x_vel"] *= -1
+            grenade["x"] = 4
+
+        if grenade["y"] > HEIGHT:
+            grenade["y_vel"] *= -1
+            grenade["y"] = HEIGHT-4
+
+        if grenade["y"] < 0:
+            grenade["y_vel"] *= -1
+            grenade["y"] = 4
+
         grenade["age"] += 1
         if grenade["age"] >= 0:
             grenades_list.pop(i)
@@ -568,17 +605,18 @@ def handle_grenades():
 
 global WIDTH, HEIGHT; WIDTH, HEIGHT = 1280, 720
 window = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption(random.choice(["I wokup inanew bugatti", "Don't forget to tell xenonmite_ his art is shid", "Racist baller", "⚪🟡🔴", "Devboi please do not use pascal case", "If your high score is less than 20000, then it's a skill issue"]))
+pygame.display.set_caption(random.choice(["I wokup inanew bugatti", "Don't forget to tell xenonmite_ his art is shid", "Racist baller", "⚪🟡🔴", "Devboi please do not use pascal case", "If your high score is less than 20000, it's a skill issue"]))
 
-ball_sprite        = pygame.image.load("assets/sprites/ball.png")
-ball_active_sprite = pygame.image.load("assets/sprites/ball_active.png")
-goal_sprite        = pygame.image.load("assets/sprites/goal.png")
-enemy_sprite       = pygame.image.load("assets/sprites/enemy.png")
-enemy_dead_sprite  = pygame.image.load("assets/sprites/enemy_dead.png")
-destroyed_goal_sprite = pygame.image.load("assets/sprites/goal_destroyed.png")
-mine_sprite        = pygame.image.load("assets/sprites/mine.png")
+ss = spritesheet("assets/sprites/spritesheet_0.png")
+ball_sprite        = ss.image_at((0, 0, 12, 12))
+ball_active_sprite = ss.image_at((12, 0, 12, 12))
+goal_sprite        = ss.image_at((0, 12, 24, 24))
+destroyed_goal_sprite = ss.image_at((24, 10, 24, 24))
+enemy_sprite       = ss.image_at((24, 0, 10, 10))
+enemy_dead_sprite  = ss.image_at((34, 0, 10, 10))
+mine_sprite        = ss.image_at((44, 0, 10, 10))
+grenade_sprite     = ss.image_at((48, 10, 8, 12))
 fish_sprite        = pygame.image.load("assets/sprites/fish.png")
-grenade_sprite     = pygame.image.load("assets/sprites/grenade.png")
 bg                 = pygame.image.load("assets/sprites/background.png")
 
 goal_vars = {"x": random.randint(10, HEIGHT-10), "y": random.randint(10, HEIGHT-10), "radius": 12}
@@ -689,9 +727,9 @@ while running:
     # Devboi do not fucking remove this loop or i will beat your skull into dust with a lead pipe
     # I will. <- this line was written by a person with massive skill issues
     #              ^ That line was written by a person with even bigger skill issues
-    #                   f^ i REALLY hate how this person writes python code
+    #                   ^ i REALLY hate how this person writes python code
     #                       ^ I will continue using PascalCase cry about it lol xd
-    #                            ^ i will cancel you on twitter
+    #                            ^ i will cancel you on twitter and youtube
 
     strings = [
          "║║        ║ ╚═╗       ║",
