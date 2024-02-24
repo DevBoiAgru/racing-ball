@@ -14,7 +14,7 @@ pygame.mixer.init()
 music = pygame.mixer.music
 
 class Ball:
-    def __init__(self, is_player: bool = False, radius: int = 6, ball_active_sprite: pygame.surface = None, ball_non_active_sprite: pygame.surface = None,initial_location: tuple = (1280/2, 720/2), fuel: float = 30, iframes: int = 0):
+    def __init__(self, is_player: bool = False, radius: int = 6, ball_active_sprite: pygame.surface = None, ball_non_active_sprite: pygame.surface = None,initial_location: tuple = (1280/2, 720/2), fuel: float = 30, iframes: int = 0, align_with_velocity :bool = False):
         self.x = initial_location[0]
         self.y = initial_location[1]
         self.fuel = fuel
@@ -34,6 +34,7 @@ class Ball:
         self.iframes = iframes
         self.PygameEvents = []
         self.total_vel = 0
+        self.align_with_velocity = align_with_velocity
         
     def check_collision(self):
         # right border
@@ -120,6 +121,11 @@ class Ball:
 
             elif event.type == pygame.KEYDOWN and event.key == (pygame.K_MINUS):
                 user_fps -= 6
+
+            # # TODO: REMOVE THIS!!! DEBUG
+            # elif event.type == pygame.KEYDOWN and event.key == (pygame.K_CAPSLOCK):
+            #     fish_boss = Enemy(False, 50, fish_sprite, fish_sprite, fuel=100, initial_location=(WIDTH//2, HEIGHT//2), speed_multiplier=3, align_with_velocity=True)
+            #     enemy_list.append(fish_boss)
 
             # music switcher (very cool)
             elif event.type == pygame.KEYDOWN and event.key == (pygame.K_1):
@@ -214,7 +220,10 @@ class Ball:
             self.create_trail()
         self.iframes_left -= 1
         sprite = self.active_sprite if self.accelerating and self.alive else self.inactive_sprite
-        window.blit(sprite, (self.x - self.radius, self.y - self.radius))
+        if self.align_with_velocity:
+            window.blit(pygame.transform.rotate(sprite, calc_rotation([self.x_vel, self.y_vel])-180), (self.x - self.radius, self.y - self.radius))
+        else:
+            window.blit(sprite, (self.x - self.radius, self.y - self.radius))
         self.y_vel += self.gravity
         self.x += self.x_vel
         self.y += self.y_vel
@@ -232,9 +241,10 @@ class Ball:
 
 
 class Enemy(Ball):
-    def __init__(self, is_player: bool = False, radius: int = 6, ball_active_sprite: pygame.surface = None, ball_non_active_sprite: pygame.surface = None, initial_location: tuple = (1280 / 2, 720 / 2), fuel: float = 30) -> None:
-        super().__init__(is_player, radius, ball_active_sprite, ball_non_active_sprite, initial_location, fuel)
-
+    def __init__(self, is_player: bool = False, radius: int = 6, ball_active_sprite: pygame.surface = None, ball_non_active_sprite: pygame.surface = None, initial_location: tuple = (1280 / 2, 720 / 2), fuel: float = 30, speed_multiplier :float=1, align_with_velocity:bool = False, tag :str="enemy") -> None:
+        super().__init__(is_player, radius, ball_active_sprite, ball_non_active_sprite, initial_location, fuel, align_with_velocity=align_with_velocity)
+        self.speedup = speed_multiplier
+        self.tag = tag
     def update_enemy(self):
         self.update()
         global score, max_enemy_fuel, enemy_list, last_kill_time, combo_timeout, combo_multiplier
@@ -248,6 +258,7 @@ class Enemy(Ball):
                 self.alive = False
                 score += 107
                 floating_text_list.append({"text": "+107", "size": 20, "duration": frame + 120, "position": (playerball.x, playerball.y), "color": (160, 80, 80)})
+                EnemyKilled(self.tag)
                 scoreboard_list.append(["Slaughtered +107", 0, (160, 80, 80)])
         
         if ((abs(playerball.x - self.x) < playerball.radius + self.radius) and (abs(playerball.y - self.y) < playerball.radius + self.radius) and self.alive) and playerball.iframes_left <= 0:
@@ -261,6 +272,7 @@ class Enemy(Ball):
                 self.y_vel = playerball.y_vel
                 playerball.fuel += 12.5
                 score += 399
+                EnemyKilled(self.tag)
                 floating_text_list.append({"text": "+399", "size": 20, "duration": frame + 120, "position": (playerball.x, playerball.y), "color": (255, 0, 0)})
                 scoreboard_list.append(["DASHED +399", 0, (255, 0, 0)])
 
@@ -291,14 +303,14 @@ class Enemy(Ball):
                 playerball.fuel += math.sqrt(2)/3
 
         if (playerball.x - self.x < 0) and self.alive:
-            self.x_vel -= self.x_acc
+            self.x_vel -= self.x_acc*self.speedup
         elif (self.x - playerball.x < 0) and self.alive: 
-            self.x_vel += self.x_acc
+            self.x_vel += self.x_acc*self.speedup
 
         if (playerball.y - self.y < 0) and self.alive:
-            self.y_vel -= self.y_acc
+            self.y_vel -= self.y_acc*self.speedup
         elif (self.y - playerball.y < 0) and self.alive: 
-            self.y_vel += self.y_acc
+            self.y_vel += self.y_acc*self.speedup
         if (not self.alive) and (abs(self.y_vel) < 0.3) and (abs(self.x_vel) < 0.3):
             enemy_list.pop(enemy_list.index(self))
     
@@ -442,7 +454,7 @@ def calc_rotation(velocity: tuple) -> float:
     velocity_x = velocity[0]
     velocity_y = velocity[1]
     try:
-        return (math.atan2(velocity_x, velocity_y) * 180 / math.pi)
+        return ((math.atan2(velocity_x, velocity_y) - 90)* 180 / math.pi)
     except ZeroDivisionError:
         pass
 
@@ -463,6 +475,7 @@ def check_mine():
                 enemy.alive = False
                 enemy.fuel = 0
                 score += 411
+                EnemyKilled(enemy.tag)
                 scoreboard_list.append(["Blasted +411", 0, (255, 255, 0)])
                 
                 # Combo bombo  
@@ -596,12 +609,27 @@ def handle_grenades():
                 enemy.alive = False
                 enemy.fuel = 0
                 score += 311
+                EnemyKilled(enemy.tag)
                 scoreboard_list.append(["Bombed +311", 0, (255, 100, 0)])
                 random.choice(sfx_mine_list).play()
             
         i += 1
 
         window.blit(pygame.transform.rotate(grenade_sprite, calc_rotation([grenade["x_vel"], grenade["y_vel"]])-180), (grenade["x"], grenade["y"]))
+
+def EnemyKilled(enemy_tag :str):
+    global kILLcOUNT, enemy_list, floating_text_list, scoreboard_list, score
+    if enemy_tag == "fishy":
+        scoreboard_list.append(["Killed Boss +1000", -100, (255, 255, 0)])
+        score += 1000
+    else:
+        pass
+    kILLcOUNT +=1
+    if kILLcOUNT % (7 + kILLcOUNT//7) == 0:
+        fish_boss = Enemy(False, 50, fish_sprite, fish_sprite, fuel=100*(1+ kILLcOUNT/7)*30, initial_location=(WIDTH//2, HEIGHT//2), speed_multiplier=3,align_with_velocity=True, tag="fishy")
+        floating_text_list.append({"text": "BOSS FIGHT! FISH BOSS!", "size": 80, "duration": frame + 180, "position": (WIDTH//2 - 500, HEIGHT//2 - 100), "color": (100, 100, 100)})
+        enemy_list.append(fish_boss)
+
 
 global WIDTH, HEIGHT; WIDTH, HEIGHT = 1280, 720
 window = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -616,9 +644,10 @@ enemy_sprite       = ss.image_at((24, 0, 10, 10))
 enemy_dead_sprite  = ss.image_at((34, 0, 10, 10))
 mine_sprite        = ss.image_at((44, 0, 10, 10))
 grenade_sprite     = ss.image_at((48, 10, 8, 12))
-fish_sprite        = pygame.image.load("assets/sprites/fish.png")
+fish_sprite        = pygame.transform.scale_by(pygame.image.load("assets/sprites/fish.png"), 0.5)
 bg                 = pygame.image.load("assets/sprites/background.png")
 
+kILLcOUNT :int= 0
 goal_vars = {"x": random.randint(10, HEIGHT-10), "y": random.randint(10, HEIGHT-10), "radius": 12}
 fuel_consumption = 1/240
 can_dash = True
@@ -730,7 +759,7 @@ while running:
     #                   ^ i REALLY hate how this person writes python code
     #                       ^ I will continue using PascalCase cry about it lol xd
     #                            ^ i will cancel you on twitter and youtube
-
+    #                               ^ I will change all variable names to 1 letter names
     strings = [
          "║║        ║ ╚═╗       ║",
          '║║[ YELLOW IS FUEL ]  ║',
@@ -740,6 +769,7 @@ while running:
         f'╠═[ x ]═[ {int(playerball.x)} ]',
         f'╠═[ y ]═[ {int(playerball.y)} ]',
         f'╠═[ f ]═[ {max(round(playerball.fuel, 1), 0)} ] ← !!',
+        f'╠═[ k ]═[ {kILLcOUNT} ]',
         f'╠═[ X ]═[ {round(playerball.x_vel, 2)} ]',
         f'╠═[ Y ]═[ {round(playerball.y_vel, 2)} ]',
         f'╠═[ i ]═[ {max(playerball.iframes, 0)} ]',
