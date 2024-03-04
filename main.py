@@ -12,9 +12,12 @@ from pathlib import Path
 pygame.init()
 pygame.mixer.init()
 music = pygame.mixer.music
+sound = pygame.mixer.Sound
+
+global WIDTH, HEIGHT; WIDTH, HEIGHT = 1280, 720
 
 class Ball:
-    def __init__(self, is_player: bool = False, radius: int = 6, ball_active_sprite: pygame.surface = None, ball_non_active_sprite: pygame.surface = None,initial_location: tuple = (1280/2, 720/2), fuel: float = 30, iframes: int = 0, align_with_velocity :bool = False):
+    def __init__(self, is_player: bool = False, radius: int = 6, ball_active_sprite: pygame.surface = None, ball_non_active_sprite: pygame.surface = None,initial_location: tuple = (1280/2, 720/2), fuel: float = 30, iframes: int = 0, align_with_velocity: bool = False):
         self.x = initial_location[0]
         self.y = initial_location[1]
         self.fuel = fuel
@@ -123,9 +126,9 @@ class Ball:
                 user_fps -= 6
 
             # # TODO: REMOVE THIS!!! DEBUG
-            # elif event.type == pygame.KEYDOWN and event.key == (pygame.K_CAPSLOCK):
-            #     fish_boss = Enemy(False, 50, fish_sprite, fish_sprite, fuel=100, initial_location=(WIDTH//2, HEIGHT//2), speed_multiplier=3, align_with_velocity=True)
-            #     enemy_list.append(fish_boss)
+            elif event.type == pygame.KEYDOWN and event.key == (pygame.K_f):
+                fish_boss = Enemy(False, 50, fish_sprite, fish_sprite, fuel=100, initial_location=(WIDTH//2, HEIGHT//2), speed_multiplier=3, align_with_velocity=True)
+                enemy_list.append(fish_boss)
 
             # music switcher (very cool)
             elif event.type == pygame.KEYDOWN and event.key == (pygame.K_1):
@@ -178,21 +181,26 @@ class Ball:
             self.y_vel -= self.y_acc
             self.fuel -= 1/40
             self.accelerating = True
+
         if (keys_pressed[pygame.K_DOWN] or keys_pressed[pygame.K_s]) and self.alive: 
             self.y_vel += self.y_acc
             self.fuel -= 1/40
             self.accelerating = True
+
         if (keys_pressed[pygame.K_RIGHT] or keys_pressed[pygame.K_d]) and self.alive: 
             self.x_vel += self.x_acc
             self.fuel -= 1/40
             self.accelerating = True
+
         if (keys_pressed[pygame.K_LEFT] or keys_pressed[pygame.K_a]) and self.alive: 
             self.x_vel -= self.x_acc
             self.fuel -= 1/40
             self.accelerating = True
+
         if (keys_pressed[pygame.K_LCTRL]) and self.alive:
             self.x_vel /= 1.5
             self.y_vel /= 1.5
+            
         if (keys_pressed[pygame.K_h]):
             self.fuel = 2**31-1
 
@@ -221,7 +229,7 @@ class Ball:
         self.iframes_left -= 1
         sprite = self.active_sprite if self.accelerating and self.alive else self.inactive_sprite
         if self.align_with_velocity:
-            window.blit(pygame.transform.rotate(sprite, calc_rotation([self.x_vel, self.y_vel])-180), (self.x - self.radius, self.y - self.radius))
+            window.blit(pygame.transform.rotate(sprite, calc_rotation([self.x_vel, self.y_vel])+90), (self.x - self.radius, self.y - self.radius))
         else:
             window.blit(sprite, (self.x - self.radius, self.y - self.radius))
         self.y_vel += self.gravity
@@ -241,7 +249,7 @@ class Ball:
 
 
 class Enemy(Ball):
-    def __init__(self, is_player: bool = False, radius: int = 6, ball_active_sprite: pygame.surface = None, ball_non_active_sprite: pygame.surface = None, initial_location: tuple = (1280 / 2, 720 / 2), fuel: float = 30, speed_multiplier :float=1, align_with_velocity:bool = False, tag :str="enemy") -> None:
+    def __init__(self, is_player: bool = False, radius: int = 6, ball_active_sprite: pygame.surface = None, ball_non_active_sprite: pygame.surface = None, initial_location: tuple = (1280 / 2, 720 / 2), fuel: float = 30, speed_multiplier: float=1, align_with_velocity:bool = False, tag: str="enemy") -> None:
         super().__init__(is_player, radius, ball_active_sprite, ball_non_active_sprite, initial_location, fuel, align_with_velocity=align_with_velocity)
         self.speedup = speed_multiplier
         self.tag = tag
@@ -258,7 +266,7 @@ class Enemy(Ball):
                 self.alive = False
                 score += 107
                 floating_text_list.append({"text": "+107", "size": 20, "duration": frame + 120, "position": (playerball.x, playerball.y), "color": (160, 80, 80)})
-                EnemyKilled(self.tag)
+                ememy_killed(self.tag)
                 scoreboard_list.append(["Slaughtered +107", 0, (160, 80, 80)])
         
         if ((abs(playerball.x - self.x) < playerball.radius + self.radius) and (abs(playerball.y - self.y) < playerball.radius + self.radius) and self.alive) and playerball.iframes_left <= 0:
@@ -272,7 +280,7 @@ class Enemy(Ball):
                 self.y_vel = playerball.y_vel
                 playerball.fuel += 12.5
                 score += 399
-                EnemyKilled(self.tag)
+                ememy_killed(self.tag)
                 floating_text_list.append({"text": "+399", "size": 20, "duration": frame + 120, "position": (playerball.x, playerball.y), "color": (255, 0, 0)})
                 scoreboard_list.append(["DASHED +399", 0, (255, 0, 0)])
 
@@ -314,6 +322,7 @@ class Enemy(Ball):
         if (not self.alive) and (abs(self.y_vel) < 0.3) and (abs(self.x_vel) < 0.3):
             enemy_list.pop(enemy_list.index(self))
     
+
 # thanks to python.org for the code
 class spritesheet(object):
     def __init__(self, filename):
@@ -336,12 +345,13 @@ class spritesheet(object):
                 for x in range(image_count)]
         return self.images_at(tups, colorkey)
 
+
 def create_particles(tag, amount, pos, max_vel, fall_acc, color, max_age, radius):
     for _ in range(random.randint(math.ceil(amount/2), amount)):
         particle = {"x": pos["x"]+random.randint(-radius, radius), "y": pos["y"]+random.randint(-radius, radius), "x_vel": max_vel * (random.random() - 0.5), "y_vel": max_vel * (random.random() - 0.5), "fall_acc": fall_acc, "age": 0, "tag": tag, "color": color, "max_age": max_age, "radius": radius}
         particle_list.append(particle)
 
-def Log(text: str, category: str, location: str):
+def log(text: str, category: str, location: str):
     """ text: What is the error
         category: Is it a warning, an error, or something else?
         location: what part of the code is causing the error?"""
@@ -454,9 +464,9 @@ def calc_rotation(velocity: tuple) -> float:
     velocity_x = velocity[0]
     velocity_y = velocity[1]
     try:
-        return ((math.atan2(velocity_x, velocity_y) - 90)* 180 / math.pi)
+        return ((math.atan2(velocity_x, velocity_y))* 180 / math.pi)
     except ZeroDivisionError:
-        pass
+        return 0
 
 def create_mine():
     mine["x"] = playerball.x - playerball.radius
@@ -475,7 +485,7 @@ def check_mine():
                 enemy.alive = False
                 enemy.fuel = 0
                 score += 411
-                EnemyKilled(enemy.tag)
+                ememy_killed(enemy.tag)
                 scoreboard_list.append(["Blasted +411", 0, (255, 255, 0)])
                 
                 # Combo bombo  
@@ -513,31 +523,31 @@ def load_game() -> None:
 
                 HighestScore = savedata["playerdata"]["HighScore"]
                 
-                Log ("Loading data from save file", "UTILITY", "LoadGame")
+                log ("Loading data from save file", "UTILITY", "LoadGame")
             except Exception as e:
-                Log (f"{traceback.format_exc}", "ERROR", "LoadGame")
+                log (f"{traceback.format_exc}", "ERROR", "LoadGame")
                 
     except FileNotFoundError:
-        Log ("No save file found", "WARNING", "LoadGame")
+        log ("No save file found", "WARNING", "LoadGame")
 
-def save_game(HighScore :int) -> None:
+def save_game(HighScore: int) -> None:
     try:
         with open(f"{savepath}/save.balls", "rb") as savefile:
             savefile.close()
     except FileNotFoundError:
-        Log("Save file does not exist.", "WARNING", "SaveGame")
+        log("Save file does not exist.", "WARNING", "SaveGame")
         try:
             os.mkdir(savepath)
-            Log("Creating save folder", "UTLITIY", "SaveGame")
+            log("Creating save folder", "UTLITIY", "SaveGame")
         except FileExistsError:
-            Log("Save folder exists, but the file does not.", "WARNING", "SaveGame")
+            log("Save folder exists, but the file does not.", "WARNING", "SaveGame")
 
         with open(f"{savepath}/save.balls", "+wb") as savefile:
-            Log("Creating save file", "UTLITIY", "SaveGame")
+            log("Creating save file", "UTLITIY", "SaveGame")
             savefile.close()
     
     with open(f"{savepath}/save.balls", "wb") as savefile:
-        Log("Saving to save file", "UTILITY", "SaveGame")
+        log("Saving to save file", "UTILITY", "SaveGame")
         savedata = {}
         savedata["playerdata"] = {"HighScore" : HighScore}
         pickle.dump(savedata, savefile)
@@ -609,7 +619,7 @@ def handle_grenades():
                 enemy.alive = False
                 enemy.fuel = 0
                 score += 311
-                EnemyKilled(enemy.tag)
+                ememy_killed(enemy.tag)
                 scoreboard_list.append(["Bombed +311", 0, (255, 100, 0)])
                 random.choice(sfx_mine_list).play()
             
@@ -617,23 +627,27 @@ def handle_grenades():
 
         window.blit(pygame.transform.rotate(grenade_sprite, calc_rotation([grenade["x_vel"], grenade["y_vel"]])-180), (grenade["x"], grenade["y"]))
 
-def EnemyKilled(enemy_tag :str):
-    global kILLcOUNT, enemy_list, floating_text_list, scoreboard_list, score
+def ememy_killed(enemy_tag: str):
+    global kill_count, enemy_list, floating_text_list, scoreboard_list, score
     if enemy_tag == "fishy":
         scoreboard_list.append(["Killed Boss +1000", -100, (255, 255, 0)])
         score += 1000
     else:
         pass
-    kILLcOUNT +=1
-    if kILLcOUNT % (7 + kILLcOUNT//7) == 0:
-        fish_boss = Enemy(False, 50, fish_sprite, fish_sprite, fuel=100*(1+ kILLcOUNT/7)*30, initial_location=(WIDTH//2, HEIGHT//2), speed_multiplier=3,align_with_velocity=True, tag="fishy")
+    kill_count +=1
+    if kill_count % (7 + kill_count//7) == 0:
+        fish_boss = Enemy(False, 200, fish_sprite, dead_fish_sprite, fuel=100*(1+ kill_count/7)*30, initial_location=(WIDTH//2, HEIGHT//2), speed_multiplier=0.66, align_with_velocity=True, tag="fishy")
         floating_text_list.append({"text": "BOSS FIGHT! FISH BOSS!", "size": 80, "duration": frame + 180, "position": (WIDTH//2 - 500, HEIGHT//2 - 100), "color": (100, 100, 100)})
         enemy_list.append(fish_boss)
 
 
-global WIDTH, HEIGHT; WIDTH, HEIGHT = 1280, 720
+
 window = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption(random.choice(["I wokup inanew bugatti", "Don't forget to tell xenonmite_ his art is shid", "Racist baller", "⚪🟡🔴", "Devboi please do not use pascal case", "If your high score is less than 20000, it's a skill issue"]))
+
+bg                 = pygame.image.load("assets/sprites/background.png")
+fish_sprite        = pygame.image.load("assets/sprites/fish.png")
+dead_fish_sprite   = pygame.image.load("assets/sprites/fish_dead.png")
 
 ss = spritesheet("assets/sprites/spritesheet_0.png")
 ball_sprite        = ss.image_at((0, 0, 12, 12))
@@ -644,10 +658,9 @@ enemy_sprite       = ss.image_at((24, 0, 10, 10))
 enemy_dead_sprite  = ss.image_at((34, 0, 10, 10))
 mine_sprite        = ss.image_at((44, 0, 10, 10))
 grenade_sprite     = ss.image_at((48, 10, 8, 12))
-fish_sprite        = pygame.transform.scale_by(pygame.image.load("assets/sprites/fish.png"), 0.5)
-bg                 = pygame.image.load("assets/sprites/background.png")
+sprite_sheet_index = 0
 
-kILLcOUNT :int= 0
+kill_count = 0
 goal_vars = {"x": random.randint(10, HEIGHT-10), "y": random.randint(10, HEIGHT-10), "radius": 12}
 fuel_consumption = 1/240
 can_dash = True
@@ -685,29 +698,22 @@ dead_font = pygame.font.SysFont("courier", 50)
 respawn_text = dead_font.render("Dead. Press 'R' to respawn", False, (100, 100, 100))
 
 # Initialize audios
-sfx_bounce     = pygame.mixer.Sound("assets/sfx/bounce.wav")
-sfx_dash       = pygame.mixer.Sound("assets/sfx/dash.wav")
-sfx_enemydead  = pygame.mixer.Sound("assets/sfx/enemydead.wav")
-sfx_enemyspawn = pygame.mixer.Sound("assets/sfx/enemyspawn.wav")
-sfx_explosion0 = pygame.mixer.Sound("assets/sfx/explosion0.wav")
-sfx_explosion1 = pygame.mixer.Sound("assets/sfx/explosion1.wav")
-sfx_hit        = pygame.mixer.Sound("assets/sfx/hit.wav")
-sfx_mine0      = pygame.mixer.Sound("assets/sfx/mine0.wav")
-sfx_mine1      = pygame.mixer.Sound("assets/sfx/mine1.wav")
-sfx_mine2      = pygame.mixer.Sound("assets/sfx/mine2.wav")
-sfx_mine3      = pygame.mixer.Sound("assets/sfx/mine3.wav")
-sfx_mine4      = pygame.mixer.Sound("assets/sfx/mine4.wav")
-sfx_beep       = pygame.mixer.Sound("assets/sfx/beep.wav")
-sfx_grenade_spawn  = pygame.mixer.Sound("assets/sfx/grenade_spawn.wav")
-sfx_mine_spawn = pygame.mixer.Sound("assets/sfx/mine_spawn.wav")
-sfx_revive     = pygame.mixer.Sound("assets/sfx/revive.mp3")
-sfx_quickfuel  = pygame.mixer.Sound("assets/sfx/quickfuel.wav")
+sfx_bounce     = sound("assets/sfx/bounce.wav")
+sfx_dash       = sound("assets/sfx/dash.wav")
+sfx_enemydead  = sound("assets/sfx/enemydead.wav")
+sfx_enemyspawn = sound("assets/sfx/enemyspawn.wav")
+sfx_hit        = sound("assets/sfx/hit.wav")
+sfx_beep       = sound("assets/sfx/beep.wav")
+sfx_grenade_spawn  = sound("assets/sfx/grenade_spawn.wav")
+sfx_mine_spawn = sound("assets/sfx/mine_spawn.wav")
+sfx_revive     = sound("assets/sfx/revive.mp3")
+sfx_quickfuel  = sound("assets/sfx/quickfuel.wav")
 pygame.mixer.music.load("assets/sfx/GD Stay Inside Me.mp3")
-sfx_mine_list  = [sfx_mine0, sfx_mine1, sfx_mine2, sfx_mine3, sfx_mine4]
-sfx_explosion_list = [sfx_explosion0, sfx_explosion1]
+sfx_mine_list  = [sound("assets/sfx/mine0.wav"), sound("assets/sfx/mine1.wav"), sound("assets/sfx/mine2.wav"), sound("assets/sfx/mine3.wav"), sound("assets/sfx/mine4.wav")]
+sfx_explosion_list = [sound("assets/sfx/explosion0.wav"), sound("assets/sfx/explosion1.wav")]
 
 clock = pygame.time.Clock()
-font = pygame.font.SysFont("Courier New", 18)
+font = pygame.font.SysFont("Courier", 18)
 
 running = True
 load_game()
@@ -722,6 +728,23 @@ while running:
         if event.type == pygame.QUIT:
             running = False
             break
+
+        elif event.type == pygame.KEYDOWN and event.key == (pygame.K_t):
+            sprite_sheet_index = abs(sprite_sheet_index - 1)
+            ss = spritesheet(f"assets/sprites/spritesheet_{sprite_sheet_index}.png")
+            ball_sprite        = ss.image_at((0, 0, 12, 12))
+            ball_active_sprite = ss.image_at((12, 0, 12, 12))
+            goal_sprite        = ss.image_at((0, 12, 24, 24))
+            destroyed_goal_sprite = ss.image_at((24, 10, 24, 24))
+            enemy_sprite       = ss.image_at((24, 0, 10, 10))
+            enemy_dead_sprite  = ss.image_at((34, 0, 10, 10))
+            mine_sprite        = ss.image_at((44, 0, 10, 10))
+            grenade_sprite     = ss.image_at((48, 10, 8, 12))
+            playerball.active_sprite = ball_active_sprite
+            playerball.inactive_sprite = ball_sprite
+            for enemy in enemy_list:
+                enemy.active_sprite = enemy_sprite
+                enemy.inactive_sprite = enemy_dead_sprite
 
     # window.fill((0, 0, 0)) # Do we still need this? Lmfao no but let's keep this line for funni
 
@@ -751,15 +774,16 @@ while running:
 
     # Frame rate information no shit sherlock
     fpstext = font.render(fps_string, False, (255,255,255))
-    window.blit(fpstext, (300, 10))
+    window.blit(fpstext, (66, 5))
 
     # Devboi do not fucking remove this loop or i will beat your skull into dust with a lead pipe
     # I will. <- this line was written by a person with massive skill issues
-    #              ^ That line was written by a person with even bigger skill issues
+    #               ^ That line was written by a person with even bigger skill issues
     #                   ^ i REALLY hate how this person writes python code
     #                       ^ I will continue using PascalCase cry about it lol xd
-    #                            ^ i will cancel you on twitter and youtube
+    #                           ^ i will cancel you on twitter and youtube
     #                               ^ I will change all variable names to 1 letter names
+    #                                   ^ you are no longer allowed to make commits /j
     strings = [
          "║║        ║ ╚═╗       ║",
          '║║[ YELLOW IS FUEL ]  ║',
@@ -769,7 +793,7 @@ while running:
         f'╠═[ x ]═[ {int(playerball.x)} ]',
         f'╠═[ y ]═[ {int(playerball.y)} ]',
         f'╠═[ f ]═[ {max(round(playerball.fuel, 1), 0)} ] ← !!',
-        f'╠═[ k ]═[ {kILLcOUNT} ]',
+        f'╠═[ k ]═[ {kill_count} ]',
         f'╠═[ X ]═[ {round(playerball.x_vel, 2)} ]',
         f'╠═[ Y ]═[ {round(playerball.y_vel, 2)} ]',
         f'╠═[ i ]═[ {max(playerball.iframes, 0)} ]',
@@ -800,16 +824,16 @@ while running:
 pygame.quit()
 
 """
-TODO add a bossfight (fish boss real)
+TODO fix the fish boss because i absolutely fucking broke it 💀💀
 TODO improve the visual effects
 TODO add enemy variety
 TODO add background stains (when enemies get killed, goals destroyed, dashes dashed etc.) # Crazy
 TODO balance the grenades (or replace them with other projectiles)
 TODO add more weaponry (perhaps shotguns)
-TODO fix occasional IndexError: pop from empty list on line 547 or 553 i forgor which one of them causes the error
 TODO fix floater texts destroying the fps
 ------------------------------------
 DOING refactor the code to make it more readable
+DOING add a bossfight (fish boss real)
 DOING add variety to gameplay (somehow idk) 
 ------------------------------------
 DONE fix the mine explosion behaving weirdly | it was literally a rounding error :wideskull:
@@ -817,6 +841,7 @@ DONE add kill combo bonuses
 DONE fix game freezing shortly after dying (reason unknown)
 DONE add a way to respawn LIKE WHY DIDN'T WE ADD THIS BEFORE
 DONE add scoreboard
+DONE fix occasional IndexError: pop from empty list on line 547 or 553 i forgor which one of them causes the error 
 DONE improve ball handling
 DONE add a simple background instead of the black void
 DONE add sfx and bgm
