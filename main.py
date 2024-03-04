@@ -200,7 +200,7 @@ class Ball:
         if (keys_pressed[pygame.K_LCTRL]) and self.alive:
             self.x_vel /= 1.5
             self.y_vel /= 1.5
-            
+
         if (keys_pressed[pygame.K_h]):
             self.fuel = 2**31-1
 
@@ -706,8 +706,9 @@ sfx_hit        = sound("assets/sfx/hit.wav")
 sfx_beep       = sound("assets/sfx/beep.wav")
 sfx_grenade_spawn  = sound("assets/sfx/grenade_spawn.wav")
 sfx_mine_spawn = sound("assets/sfx/mine_spawn.wav")
-sfx_revive     = sound("assets/sfx/revive.mp3")
 sfx_quickfuel  = sound("assets/sfx/quickfuel.wav")
+sfx_revive     = sound("assets/sfx/revive.mp3")
+sfx_spongebob  = sound("assets/sfx/im-spongebob.mp3")
 pygame.mixer.music.load("assets/sfx/GD Stay Inside Me.mp3")
 sfx_mine_list  = [sound("assets/sfx/mine0.wav"), sound("assets/sfx/mine1.wav"), sound("assets/sfx/mine2.wav"), sound("assets/sfx/mine3.wav"), sound("assets/sfx/mine4.wav")]
 sfx_explosion_list = [sound("assets/sfx/explosion0.wav"), sound("assets/sfx/explosion1.wav")]
@@ -730,6 +731,7 @@ while running:
             break
 
         elif event.type == pygame.KEYDOWN and event.key == (pygame.K_t):
+            sfx_spongebob.play()
             sprite_sheet_index = abs(sprite_sheet_index - 1)
             ss = spritesheet(f"assets/sprites/spritesheet_{sprite_sheet_index}.png")
             ball_sprite        = ss.image_at((0, 0, 12, 12))
