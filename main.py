@@ -620,7 +620,7 @@ def handle_grenades():
                 enemy.fuel = 0
                 score += 311
                 ememy_killed(enemy.tag)
-                scoreboard_list.append(["Bombed +311", 0, (255, 100, 0)])
+                scoreboard_list.append(["Bombed +911", 0, (255, 100, 0)])
                 random.choice(sfx_mine_list).play()
             
         i += 1
