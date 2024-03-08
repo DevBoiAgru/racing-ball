@@ -213,8 +213,14 @@ class Ball:
             ball_trail["age"] += 1
             if ball_trail["age"] > 9:
                 ball_trail_list.pop(ball_trail_list.index(ball_trail))
-            if ball_trail["active"]: pygame.draw.circle(window, (max(0, 255 - 24 * ball_trail["age"]), max(0, 255 - 48 * ball_trail["age"]), 0), (ball_trail["x"], ball_trail["y"]), 4 - 0.36 * ball_trail["age"])
-            else: pygame.draw.circle(window, (max(0, 31 - 2 * ball_trail["age"]), max(0, 31 - 2 * ball_trail["age"]), 0), (ball_trail["x"], ball_trail["y"]), 4 - 0.36 * ball_trail["age"])
+
+            if sprite_sheet_index == 2:
+                if ball_trail["active"]: pygame.draw.circle(window, (0, max(0, 255 - 48 * ball_trail["age"]), max(0, 255 - 24 * ball_trail["age"])), (ball_trail["x"], ball_trail["y"]), 4 - 0.36 * ball_trail["age"])
+                else: pygame.draw.circle(window, (0, max(0, 31 - 2 * ball_trail["age"]), max(0, 255 - 24 * ball_trail["age"])), (ball_trail["x"], ball_trail["y"]), 4 - 0.36 * ball_trail["age"])
+            
+            else:
+                if ball_trail["active"]: pygame.draw.circle(window, (max(0, 255 - 24 * ball_trail["age"]), max(0, 255 - 48 * ball_trail["age"]), 0), (ball_trail["x"], ball_trail["y"]), 4 - 0.36 * ball_trail["age"])
+                else: pygame.draw.circle(window, (max(0, 31 - 2 * ball_trail["age"]), max(0, 31 - 2 * ball_trail["age"]), 0), (ball_trail["x"], ball_trail["y"]), 4 - 0.36 * ball_trail["age"])
 
     def die(self):
         if self.Is_Player and score > HighestScore:
@@ -333,6 +339,8 @@ class spritesheet(object):
         rect = pygame.Rect(rectangle)
         image = pygame.Surface(rect.size)
         image.blit(self.sheet, (0, 0), rect)
+        image.convert_alpha()
+        image.set_colorkey((0, 0, 0))
         return image
     # Load a whole bunch of images and return them as a list
     def images_at(self, rects, colorkey = None):
@@ -645,7 +653,8 @@ def ememy_killed(enemy_tag: str):
 window = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption(random.choice(["I wokup inanew bugatti", "Don't forget to tell xenonmite_ his art is shid", "Racist baller", "⚪🟡🔴", "Devboi please do not use pascal case", "If your high score is less than 20000, it's a skill issue"]))
 
-bg                 = pygame.image.load("assets/sprites/background.png")
+background         = pygame.image.load("assets/sprites/background.png")
+wall               = pygame.image.load("assets/sprites/wall.png")
 fish_sprite        = pygame.image.load("assets/sprites/fish.png")
 dead_fish_sprite   = pygame.image.load("assets/sprites/fish_dead.png")
 
@@ -732,8 +741,9 @@ while running:
 
         elif event.type == pygame.KEYDOWN and event.key == (pygame.K_t):
             sfx_spongebob.play()
-            sprite_sheet_index = abs(sprite_sheet_index - 1)
+            sprite_sheet_index = 1 if sprite_sheet_index == 0 else 2 if sprite_sheet_index == 1 else 0
             ss = spritesheet(f"assets/sprites/spritesheet_{sprite_sheet_index}.png")
+
             ball_sprite        = ss.image_at((0, 0, 12, 12))
             ball_active_sprite = ss.image_at((12, 0, 12, 12))
             goal_sprite        = ss.image_at((0, 12, 24, 24))
@@ -744,6 +754,7 @@ while running:
             grenade_sprite     = ss.image_at((48, 10, 8, 12))
             playerball.active_sprite = ball_active_sprite
             playerball.inactive_sprite = ball_sprite
+
             for enemy in enemy_list:
                 enemy.active_sprite = enemy_sprite
                 enemy.inactive_sprite = enemy_dead_sprite
@@ -751,7 +762,10 @@ while running:
     # window.fill((0, 0, 0)) # Do we still need this? Lmfao no but let's keep this line for funni
 
     # Blit background, no shit sherlock
-    window.blit(bg, (0,0))
+    if sprite_sheet_index != 2:
+        window.blit(background, (0,0))
+    else:
+        window.blit(wall, (0,0))
 
     playerball.accelerating = False
     playerball.fuel -= fuel_consumption
