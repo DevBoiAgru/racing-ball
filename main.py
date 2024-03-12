@@ -9,6 +9,8 @@ import numpy as np # mf why did you import it and not even use it :skull:
                    # I forgot to uncomment the code after comparing performance :wideskull:
 from datetime import datetime
 from pathlib import Path
+from objects import *
+
 pygame.init()
 pygame.mixer.init()
 music = pygame.mixer.music
@@ -261,7 +263,7 @@ class Enemy(Ball):
         self.tag = tag
     def update_enemy(self):
         self.update()
-        global score, max_enemy_fuel, enemy_list, last_kill_time, combo_timeout, combo_multiplier
+        global score, max_enemy_fuel, enemy_list, last_kill_time, combo_timeout, combo_multiplier, static_list
         self.fuel -= 1/60
         if self.fuel <= 0:
             self.accelerating = True
@@ -273,6 +275,11 @@ class Enemy(Ball):
                 score += 107
                 floating_text_list.append({"text": "+107", "size": 20, "duration": frame + 120, "position": (playerball.x, playerball.y), "color": (160, 80, 80)})
                 enemy_killed(self.tag)
+                
+                # Add splat
+                static_list.append(
+                    StaticSprite(splat_sprite, 2, (self.x, self.y), window)
+                )
                 scoreboard_list.append(["Slaughtered +107", 0, (160, 80, 80)])
         
         if ((abs(playerball.x - self.x) < playerball.radius + self.radius) and (abs(playerball.y - self.y) < playerball.radius + self.radius) and self.alive) and playerball.iframes_left <= 0:
@@ -287,6 +294,10 @@ class Enemy(Ball):
                 playerball.fuel += 12.5
                 score += 399
                 enemy_killed(self.tag)
+                # Add splat
+                static_list.append(
+                    StaticSprite(splat_sprite, 2, (self.x, self.y), window)
+                )
                 floating_text_list.append({"text": "+399", "size": 20, "duration": frame + 120, "position": (playerball.x, playerball.y), "color": (255, 0, 0)})
                 scoreboard_list.append(["DASHED +399", 0, (255, 0, 0)])
 
@@ -298,6 +309,7 @@ class Enemy(Ball):
                         score += 250*combo_multiplier*1.2**combo_multiplier
                 else:
                     combo_multiplier = 1
+
 
                 last_kill_time = time.time()
 
@@ -484,7 +496,7 @@ def create_mine():
     sfx_mine_spawn.play()
 
 def check_mine():
-    global score, last_kill_time, combo_timeout, combo_multiplier
+    global score, last_kill_time, combo_timeout, combo_multiplier, static_list, window
     mine["timer"] -= 1
     if (mine["timer"] % 20 == 0) and (mine["timer"] > 0):
         sfx_beep.play()
@@ -495,6 +507,10 @@ def check_mine():
                 enemy.fuel = 0
                 score += 411
                 enemy_killed(enemy.tag)
+                # Add splat
+                static_list.append(
+                    StaticSprite(splat_sprite, 2, (enemy.x, enemy.y), window)
+                )
                 scoreboard_list.append(["Blasted +411", 0, (255, 255, 0)])
                 
                 # Combo bombo  
@@ -505,7 +521,6 @@ def check_mine():
                         score += 250*combo_multiplier*1.2**combo_multiplier
                 else:
                     combo_multiplier = 1
-
                 floating_text_list.append({"text": "+411", "size": 20, "duration": frame + 120, "position": (enemy.x, enemy.y), "color": (255, 255, 0)})
         create_particles(None, 1, {"x": mine["x"], "y": mine["y"]}, 0, 0, (255, 180, 0), 5, 166) 
         random.choice(sfx_mine_list).play()
@@ -628,6 +643,10 @@ def handle_grenades():
                 enemy.fuel = 0
                 score += 311
                 enemy_killed(enemy.tag)
+                # Add splat
+                static_list.append(
+                    StaticSprite(splat_sprite, 2, (enemy.x, enemy.y), window)
+                )
                 scoreboard_list.append(["Bombed +911", 0, (255, 100, 0)])
                 random.choice(sfx_mine_list).play()
         i += 1
@@ -635,7 +654,7 @@ def handle_grenades():
         window.blit(pygame.transform.rotate(grenade_sprite, calc_rotation([grenade["x_vel"], grenade["y_vel"]])-180), (grenade["x"], grenade["y"]))
 
 def enemy_killed(enemy_tag: str):
-    global kill_count, enemy_list, floating_text_list, scoreboard_list, score
+    global kill_count, enemy_list, floating_text_list, scoreboard_list, score, static_list
     if enemy_tag == "fishy":
         scoreboard_list.append(["Killed Boss +1000", -100, (255, 255, 0)])
         score += 1000
@@ -658,6 +677,8 @@ troll_bg         = pygame.image.load("assets/sprites/troll.png")
 minecraft_bg     = pygame.image.load("assets/sprites/wall.png")
 fish_sprite      = pygame.image.load("assets/sprites/fish.png")
 
+splat_sprite     = pygame.transform.scale_by(pygame.image.load("assets/sprites/splat.png"), 0.2)
+
 ss = spritesheet("assets/sprites/spritesheet_0.png")
 ball_sprite        = ss.image_at((0, 0, 12, 12))
 ball_active_sprite = ss.image_at((12, 0, 12, 12))
@@ -673,6 +694,7 @@ goal_vars = {"x": random.randint(10, HEIGHT-10), "y": random.randint(10, HEIGHT-
 goal_destroyed = {"x": -500, "y": -8000, "y_vel": 0}
 mine = {"x": -500, "y": -8000, "timer": -1}
 
+static_list :list[StaticSprite]= []
 floating_text_list = []   
 ball_trail_list = []
 scoreboard_list = []
@@ -681,22 +703,22 @@ grenades_list = []
 enemy_list = []
 fps_list = []
 
-show_floating_text_for = 0
-fuel_consumption = 1/240
-last_fps_check_time = 0
-combo_multiplier = 1
-max_enemy_timer = 4
-max_enemy_fuel = 5
-last_kill_time = 0
-combo_timeout = 5
-highest_score = 0
-enemy_timer = 1             # Why are these marked as global if they are already global | it works and therefore im not touching it | Bruh | nvm i touched it
-kill_count = 0
-musicindex = 0
-last_dash = 0
-user_fps = 60
-score = 0
-frame = 0
+show_floating_text_for  = 0
+last_fps_check_time     = 0
+fuel_consumption        = 1/240
+combo_multiplier        = 1
+max_enemy_timer         = 4
+max_enemy_fuel          = 5
+last_kill_time          = 0
+combo_timeout           = 5
+highest_score           = 0
+enemy_timer             = 1     # Why are these marked as global if they are already global | it works and therefore im not touching it | Bruh | nvm i touched it
+kill_count              = 0
+musicindex              = 0
+last_dash               = 0
+user_fps                = 60
+score                   = 0
+frame                   = 0
 
 fps_string = ""
 savepath = "Saves"
@@ -777,7 +799,13 @@ while running:
     playerball.fuel -= fuel_consumption
 
     playerball.iframes -= 1
-    pygame.draw.circle(window, (24, 16, 0), (mine["x"], mine["y"]), 100)
+    pygame.draw.circle(window, pygame.Color(24, 16, 0, 20), (mine["x"], mine["y"]), 100)
+    # Update static sprites (for ex: splats)
+    for sprite in static_list:
+        if not sprite.active:
+            static_list.remove(sprite)
+        else:
+            sprite.update()
     check_fps()
     check_goal()
     check_mine()
@@ -805,6 +833,7 @@ while running:
     #                           ^ i will cancel you on twitter and youtube
     #                               ^ I will change all variable names to 1 letter names
     #                                   ^ you are no longer allowed to make commits /j (or is it)
+    #                                       ^ thats it no more n word pass for you
 
     strings = [
          "║║        ║ ╚═╗       ║",
@@ -846,7 +875,6 @@ pygame.quit()
 TODO fix the fish boss because i absolutely fucking broke it 💀💀
 TODO improve the visual effects
 TODO add enemy variety
-TODO add background stains (when enemies get killed, goals destroyed, dashes dashed etc.) # Crazy
 TODO balance the grenades (or replace them with other projectiles)
 TODO add more weaponry (perhaps shotguns)
 TODO fix floater texts destroying the fps
@@ -854,6 +882,7 @@ TODO fix floater texts destroying the fps
 DOING add a bossfight (fish boss real)
 DOING add variety to gameplay (somehow idk) 
 ------------------------------------
+DONE add background stains (when enemies get killed, goals destroyed, dashes dashed etc.) # Crazy
 DONE refactor the code to make it more readable
 DONE fix the mine explosion behaving weirdly | it was literally a rounding error :wideskull:
 DONE add kill combo bonuses
