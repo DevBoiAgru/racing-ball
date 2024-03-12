@@ -4,26 +4,26 @@ import base64
 import os
 import time
 
-def Get(URL :str):
-    """Returns content of the response to a GET request"""
+def get(URL: str):
+    # Returns content of the response to a GET request
     with urllib.request.urlopen(URL) as response:
         return response.read()
 
-run :str= ""
-dep :str= ""
-while dep.lower() not in ["y", "n"]:
-    dep = input("Fetch dependencies after updating? (y/n): ")
-while run.lower() not in ["y", "n"]:
-    run = input("Run the game after updating? (y/n): ")
+if_run: str = ""
+if_depends: str = ""
+while if_depends.lower() not in ["y", "n"]:
+    if_depends = input("Fetch dependencies after updating? (y/n): ")
+while if_run.lower() not in ["y", "n"]:
+    if_run = input("Run the game after updating? (y/n): ")
 
-REPO_TREE :str = "https://api.github.com/repos/devboiagru/racing-ball/git/trees/main?recursive=1"
-COOLDOWN :float= 0.5                                    # Delay between HTTP requests to prevent rate limiting
+REPO_TREE: str = "https://api.github.com/repos/devboiagru/racing-ball/git/trees/main?recursive=1"
+COOLDOWN: float= 0.5                                    # Delay between HTTP requests to prevent rate limiting
 
 print (f"Getting repository tree: {REPO_TREE}")
-files = json.loads(Get(REPO_TREE))['tree']
+files = json.loads(get(REPO_TREE))['tree']
 
-trees :list= []
-blobs :list= []
+trees: list = []
+blobs: list = []
 
 try:
     with open("local_checksums.json", "+r") as checksum_file:
@@ -37,10 +37,10 @@ for file in files:
     if file["type"] == "blob":
         try:                                            # Only update files which have changed
             if file["sha"] != checksums[file["path"]]:
-                print (f"New / Updated file: {file['path']}...")
+                print(f"New / Updated file: {file['path']}...")
                 blobs.append(file)
             else:
-                print (f"Checksum matches for: {file['path']}, not updating...")
+                print(f"Checksum matches for: {file['path']}, not updating...")
         except KeyError:
             blobs.append(file)
     else:                                               # File is a tree
@@ -54,13 +54,12 @@ for folder in trees:                                    # Create folders
         print(f"{folder['path']} already exists")
 
 with open("local_checksums.json", "+w") as checksum_file:
-
     for blob in blobs:
         try:
             with open(blob["path"], "+wb") as file:
                 print (f"Getting {blob['url']}")
                 checksums[blob["path"]] = blob["sha"]
-                file_data  = json.loads(Get(blob["url"]))
+                file_data  = json.loads(get(blob["url"]))
                 file_b64   = file_data["content"]
                 file_bytes = base64.b64decode(file_b64)
                 print (f"Writing {blob['path']}")
@@ -70,7 +69,7 @@ with open("local_checksums.json", "+w") as checksum_file:
             print (f"Exception {e} of type {type(e)}")
     json.dump(checksums, checksum_file, indent=4)
 
-if dep.lower() == "y":
+if if_depends.lower() == "y":
     os.system('"pip install -r requirements.txt"')
-if run.lower() == "y":
+if if_run.lower() == "y":
     os.system('"python main.py"')
