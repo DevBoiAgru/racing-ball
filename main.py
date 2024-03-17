@@ -91,7 +91,7 @@ class Ball:
         load_game()
 
     def handle_movement(self):
-        global score, last_dash, user_fps
+        global score, last_dash, user_fps, paused
 
         for event in self.PygameEvents:
             if event.type == pygame.KEYDOWN and event.key == (pygame.K_LSHIFT) and self.alive:
@@ -259,7 +259,9 @@ class Enemy(Ball):
         super().__init__(is_player, radius, ball_active_sprite, ball_non_active_sprite, initial_location, fuel, align_with_velocity=align_with_velocity)
         self.natural_acc = speed_multiplier
         self.tag = tag
+
     def update_enemy(self):
+        global max_enemy_fuel, max_enemy_timer
         self.update()
         global score, max_enemy_fuel, enemy_list, last_kill_time, combo_timeout, combo_multiplier
         self.fuel -= 1/60
@@ -277,8 +279,8 @@ class Enemy(Ball):
         
         if ((abs(playerball.x - self.x) < playerball.radius + self.radius) and (abs(playerball.y - self.y) < playerball.radius + self.radius) and self.alive) and playerball.iframes_left <= 0:
             enemy_vel = math.sqrt(self.x_vel**2 + self.y_vel**2)
-            vel_diff = abs(playerball.total_vel - enemy_vel)
-            if vel_diff > 22 and playerball.total_vel >= enemy_vel:
+            vel_diff = abs(abs(playerball.total_vel) - abs(enemy_vel))
+            if vel_diff > 20 and abs(playerball.total_vel) >= abs(enemy_vel):
                 self.alive = False  
                 create_particles(None, 8, {"x": self.x, "y": self.y}, 4, 0, (20, 52, 100), 50, 5)
                 sfx_enemydead.play()
@@ -290,7 +292,19 @@ class Enemy(Ball):
                 floating_text_list.append({"text": "+399", "size": 20, "duration": frame + 120, "position": (playerball.x, playerball.y), "color": (255, 0, 0)})
                 scoreboard_list.append(["DASHED +399", 0, (255, 0, 0)])
 
-                # Combo bombo  
+                if self.tag == "goal":
+                    playerball.fuel += 16.3
+                    self.x_vel /= 4
+                    self.y_vel /= 4
+                    create_particles("None", 20, {"x": self.x, "y": self.y}, 6, 0.03, (255, 255, 0), 50, 6)
+                    create_particles("create_subparticles", 7, {"x": self.x, "y": self.y}, 12, 0.02, (255, 255, 0), 20, 6)
+                    scoreboard_list.append(["Refuel +242", 0, (180, 180, 0)])
+                    random.choice(sfx_explosion_list).play()
+                    max_enemy_fuel *= 1.125
+                    max_enemy_timer *= 0.925
+                    max_enemy_timer += 0.175
+
+                # Combo bombo  NEEDS FIXING
                 if time.time() - last_kill_time <= combo_timeout:
                     combo_multiplier += 1
                     if combo_multiplier >= 2:
@@ -299,7 +313,7 @@ class Enemy(Ball):
                 else:
                     combo_multiplier = 1
 
-                last_kill_time = time.time()
+                    last_kill_time = time.time()
 
             elif playerball.iframes <= 0:
                 playerball.fuel = min(playerball.fuel - 4, playerball.fuel / 1.33)
@@ -333,7 +347,7 @@ class Enemy(Ball):
     
 
 # thanks to python.org for the code
-class spritesheet(object):
+class spritesheet:
     def __init__(self, filename):
         self.sheet = pygame.image.load(filename)
     # Load a specific image from a specific rectangle
@@ -413,47 +427,6 @@ def particle_update():
                                     (particle["x"], particle["y"]), particle["radius"] - particle["radius"] * (particle["age"] / particle["max_age"]))
         i += 1
 
-def check_goal():
-    global score, max_enemy_fuel, max_enemy_timer, playerball
-    goal_destroyed["y_vel"] += 0.05
-    if goal_destroyed["y"] > HEIGHT-12:
-        goal_destroyed["y_vel"] = 0
-    goal_destroyed["y"] += goal_destroyed["y_vel"]
-    create_particles(None, 1, {"x": goal_destroyed["x"]+12, "y": goal_destroyed["y"]+3}, 0, -0.05, (90, 90, 90), 20, 2)
-
-    if (abs(playerball.x - goal_vars["x"]) < playerball.radius + goal_vars["radius"]) and (abs(playerball.y - goal_vars['y']) < playerball.radius + goal_vars["radius"]):
-        create_particles("None", 20, {"x": goal_vars["x"], "y": goal_vars["y"]}, 3, 0.03, (255, 255, 0), 50, 6)
-        goal_destroyed["x"] = goal_vars["x"] - goal_vars["radius"]
-        goal_destroyed["y"] = goal_vars["y"] - goal_vars["radius"]
-        goal_destroyed["y_vel"] = 0
-        if not playerball.alive: 
-            playerball.alive = True
-            score += 640
-            floating_text_list.append({"text": "+640", "size": 20, "duration": frame + 120, "position": (playerball.x, playerball.y), "color": (120, 120, 180)})
-            scoreboard_list.append(["REBIRTH +640", 0, (120, 120, 160)])
-            sfx_revive.play()
-
-        if playerball.total_vel > 15:
-            create_particles("create_subparticles", 7, {"x": goal_vars["x"], "y": goal_vars["y"]}, 8, 0.02, (255, 255, 0), 20, 6)
-            playerball.fuel += 13
-            score += 242
-            floating_text_list.append({"text": "+242", "size": 20, "duration": frame + 120, "position": (playerball.x, playerball.y), "color": (180, 180, 0)})
-            scoreboard_list.append(["QUICKFUEL +242", 0, (180, 180, 0)])
-            sfx_quickfuel.play()
-        else:
-            playerball.fuel = min(60, playerball.fuel + 6.3)
-            score += 127
-            floating_text_list.append({"text": "+127", "size": 20, "duration": frame + 120, "position": (playerball.x, playerball.y), "color": (130, 130, 70)})
-            scoreboard_list.append(["Refuel +127", 0, (130, 130, 70)])
-
-        random.choice(sfx_explosion_list).play()
-        max_enemy_fuel *= 1.125
-        max_enemy_timer *= 0.925
-        max_enemy_timer += 0.175
-
-        goal_vars["x"] = random.randint(10, WIDTH-10)
-        goal_vars["y"] = random.randint(10, HEIGHT-10)
-
 def create_enemies():
     global enemy_timer, max_enemy_fuel, max_enemy_timer
     enemy_timer -= 1/60
@@ -461,7 +434,11 @@ def create_enemies():
         sfx_enemyspawn.play()
         enemy_timer = max_enemy_timer
         # enemy_list.append({"x": 500, "y": 500, "x_vel": 0, "y_vel": 0, "x_acc": 0.2, "y_acc": 1/3, "fall_acc": 0.2, "radius": 6, "fuel": round(max_enemy_fuel, 0), "alive": True, "done": False})
-        enemy_list.append(Enemy(False, fuel=round(max_enemy_fuel, 0), ball_active_sprite=enemy_sprite, ball_non_active_sprite=enemy_dead_sprite, initial_location=(500,500)))
+        if random.random() > 0.3:
+            enemy_list.append(Enemy(False, fuel=round(max_enemy_fuel, 0), ball_active_sprite=enemy_sprite, ball_non_active_sprite=enemy_dead_sprite, initial_location=(500,500)))
+        else:
+            enemy_list.append(Enemy(False, 12, goal_sprite, destroyed_goal_sprite, (500, 500), 999999, 0.3, False, "goal"))
+        
         create_particles(None, 14, {"x": enemy_list[-1].x,  "y": enemy_list[-1].y}, 4, 0, (200, 0, 0), 50, 5)
 
 def update_enemies():
@@ -649,7 +626,7 @@ def enemy_killed(enemy_tag: str):
 
 
 
-window = pygame.display.set_mode((WIDTH, HEIGHT))
+window = pygame.display.set_mode((WIDTH, HEIGHT), pygame.RESIZABLE)
 pygame.display.set_caption(random.choice(["I wokup inanew bugatti", "Don't forget to tell xenonmite_ his art is shid", "Racist baller", "⚪🟡🔴", "Devboi please do not use pascal case", "If your high score is less than 20000, it's a skill issue"]))
 
 default_bg       = pygame.image.load("assets/sprites/background.png")
@@ -669,7 +646,6 @@ mine_sprite        = ss.image_at((44, 0, 10, 10))
 grenade_sprite     = ss.image_at((48, 10, 8, 12))
 sprite_sheet_index = 0
 
-goal_vars = {"x": random.randint(10, HEIGHT-10), "y": random.randint(10, HEIGHT-10), "radius": 12}
 goal_destroyed = {"x": -500, "y": -8000, "y_vel": 0}
 mine = {"x": -500, "y": -8000, "timer": -1}
 
@@ -682,15 +658,15 @@ enemy_list = []
 fps_list = []
 
 show_floating_text_for = 0
-fuel_consumption = 1/240
 last_fps_check_time = 0
+fuel_consumption = 1/240
 combo_multiplier = 1
 max_enemy_timer = 4
 max_enemy_fuel = 5
 last_kill_time = 0
 combo_timeout = 5
 highest_score = 0
-enemy_timer = 1             # Why are these marked as global if they are already global | it works and therefore im not touching it | Bruh | nvm i touched it
+enemy_timer = 1             # Why are these marked as global if they are already global | it works and therefore im not touching it | Bruh | nvm i touched it; do we remove this line or do we keep it for history
 kill_count = 0
 musicindex = 0
 last_dash = 0
@@ -700,7 +676,9 @@ frame = 0
 
 fps_string = ""
 savepath = "Saves"
+
 can_dash = True
+paused = False
 
 music_path = str(Path.home() / "Music")
 music_files = next(os.walk(music_path), (None, None, []))[2]
@@ -744,6 +722,18 @@ while running:
             running = False
             break
 
+        elif event.type == pygame.VIDEORESIZE:
+            window = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
+            WIDTH = window.get_width()
+            HEIGHT = window.get_height()
+
+        elif event.type == pygame.KEYDOWN and event.key == pygame.K_p:
+            paused = not paused
+            fontrender = pygame.font.SysFont("courier", 80)
+            rend = fontrender.render("[ PAUSED ]", False, (100, 100, 100))
+            window.blit(rend, (WIDTH / 2 - rend.get_width() / 2, HEIGHT / 2 - rend.get_height() / 2))
+
+
         elif event.type == pygame.KEYDOWN and event.key == (pygame.K_t):
             sfx_spongebob.play()
             sprite_sheet_index = 1 if sprite_sheet_index == 0 else 2 if sprite_sheet_index == 1 else 3 if sprite_sheet_index == 2 else 0
@@ -767,74 +757,73 @@ while running:
 
     # window.fill((0, 0, 0)) # Do we still need this? Lmfao no but let's keep this line for funni
 
-    # Blit background, no shit sherlock
-    match sprite_sheet_index:
-        case 2: window.blit(minecraft_bg, (0, 0))
-        case 3: window.blit(troll_bg, (0, 0))
-        case _: window.blit(default_bg, (0, 0))
+    if not paused:
+        # Blit background, no shit sherlock
+        match sprite_sheet_index:
+            case 2: window.blit(minecraft_bg, (0, 0))
+            case 3: window.blit(troll_bg, (0, 0))
+            case _: window.blit(default_bg, (0, 0))
 
-    playerball.accelerating = False
-    playerball.fuel -= fuel_consumption
+        playerball.accelerating = False
+        playerball.fuel -= fuel_consumption
 
-    playerball.iframes -= 1
-    pygame.draw.circle(window, (24, 16, 0), (mine["x"], mine["y"]), 100)
-    check_fps()
-    check_goal()
-    check_mine()
-    playerball.update()
-    handle_grenades()
-    update_enemies()
-    update_scoreboard()
-    update_floatertext()
-    particle_update()
+        playerball.iframes -= 1
+        pygame.draw.circle(window, (24, 16, 0), (mine["x"], mine["y"]), 100)
+        check_fps()
+        check_mine()
+        playerball.update()
+        handle_grenades()
+        update_enemies()
+        update_scoreboard()
+        update_floatertext()
+        particle_update()
 
-    highscore_text = default_font.render(f"High score: {highest_score}", False, (100,100,100))
-    window.blit(pygame.transform.scale_by(highscore_text, 1.2), (WIDTH-230, 50))
+        highscore_text = default_font.render(f"High score: {highest_score}", False, (100,100,100))
+        window.blit(pygame.transform.scale_by(highscore_text, 1.2), (WIDTH-230, 50))
 
-    score_text = default_font.render(f"Score: {score}", False, (100,100,100))
-    window.blit(pygame.transform.scale_by(score_text, 1.2), (WIDTH-230, 70))
+        score_text = default_font.render(f"Score: {score}", False, (100,100,100))
+        window.blit(pygame.transform.scale_by(score_text, 1.2), (WIDTH-230, 70))
 
-    fps_text = default_font.render(fps_string, False, (255,255,255))
-    window.blit(fps_text, (66, 5))
+        fps_text = default_font.render(fps_string, False, (255,255,255))
+        window.blit(fps_text, (WIDTH/2 - fps_text.get_width()/2, 5))
 
-    # Devboi do not fucking remove this loop or i will beat your skull into dust with a lead pipe
-    # I will. <- this line was written by a person with massive skill issues
-    #               ^ That line was written by a person with even bigger skill issues
-    #                   ^ i REALLY hate how this person writes python code
-    #                       ^ I will continue using PascalCase cry about it lol xd
-    #                           ^ i will cancel you on twitter and youtube
-    #                               ^ I will change all variable names to 1 letter names
-    #                                   ^ you are no longer allowed to make commits /j (or is it)
+        # Devboi do not fucking remove this loop or i will beat your skull into dust with a lead pipe
+        # I will. <- this line was written by a person with massive skill issues
+        #               ^ That line was written by a person with even bigger skill issues
+        #                   ^ i REALLY hate how this person writes python code
+        #                       ^ I will continue using PascalCase cry about it lol xd
+        #                           ^ i will cancel you on twitter and youtube
+        #                               ^ I will change all variable names to 1 letter names
+        #                                   ^ you are no longer allowed to make commits /j (or is it (it's not))
 
-    strings = [
-         "║║        ║ ╚═╗       ║",
-         '║║[ YELLOW IS FUEL ]  ║',
-         '║║ [ RED ARE THREAT ]═╝',
-         '║╚══[ GOAL:  SURVIVE ]',
-         '║ ',
-        f'╠═[ x ]═[ {int(playerball.x)} ]',
-        f'╠═[ y ]═[ {int(playerball.y)} ]',
-        f'╠═[ k ]═[ {kill_count} ]',
-        f'╠═[ X ]═[ {round(playerball.x_vel, 2)} ]',
-        f'╠═[ Y ]═[ {round(playerball.y_vel, 2)} ]',
-        f'╠═[ i ]═[ {max(playerball.iframes, 0)} ]',
-        f'╠═[ E ]═[ {len(enemy_list)} ]',
-        f'╠═[ e ]═[ {round(enemy_timer, 2)} ]',
-        f'╠═[ m ]═[ {round(max_enemy_fuel, 1)} ]',
-        f'╠═[ M ]═[ {round(max_enemy_timer, 2)} ]',
-        f'╠═[ p ]═[ {len(particle_list)} ]',
-         '╝ '
-    ]
-    for string in strings:
-        text = default_font.render(string, False, (100, 100, 100))
-        window.blit(text, (0, 20 * (strings.index(string) + 1) - 20))
+        strings = [
+             "║║        ║ ╚═╗       ║",
+             '║║[ YELLOW IS FUEL ]  ║',
+             '║║ [ RED ARE THREAT ]═╝',
+             '║╚══[ GOAL:  SURVIVE ]',
+             '║ ',
+            f'╠═[ x ]═[ {int(playerball.x)} ]',
+            f'╠═[ y ]═[ {int(playerball.y)} ]',
+            f'╠═[ k ]═[ {kill_count} ]',
+            f'╠═[ X ]═[ {round(playerball.x_vel, 2)} ]',
+            f'╠═[ Y ]═[ {round(playerball.y_vel, 2)} ]',
+            f'╠═[ i ]═[ {max(playerball.iframes, 0)} ]',
+            f'╠═[ E ]═[ {len(enemy_list)} ]',
+            f'╠═[ e ]═[ {round(enemy_timer, 2)} ]',
+            f'╠═[ m ]═[ {round(max_enemy_fuel, 1)} ]',
+            f'╠═[ M ]═[ {round(max_enemy_timer, 2)} ]',
+            f'╠═[ p ]═[ {len(particle_list)} ]',
+             '╝ '
+        ]
+        for string in strings:
+            text = default_font.render(string, False, (100, 100, 100))
+            window.blit(text, (0, 20 * (strings.index(string) + 1) - 20))
 
-    fuel_string = default_font.render(str(max(round(playerball.fuel, 1), 0.0)), False, (255, 255, 200) if playerball.fuel > 0 else (255, 0, 0))
-    window.blit(fuel_string, (600, 50))
+        fuel_string = default_font.render(str(max(round(playerball.fuel, 1), 0.0)), False, (255, 255, 200) if playerball.fuel > 0 else (255, 0, 0))
+        window.blit(fuel_string, (WIDTH/2 - fuel_string.get_width()/2, 50))
 
-    window.blit(destroyed_goal_sprite, (goal_destroyed["x"], goal_destroyed["y"]))
-    window.blit(goal_sprite, (goal_vars["x"] - goal_vars["radius"], goal_vars["y"] - goal_vars["radius"]))
-    window.blit(mine_sprite, (mine["x"]-5, mine["y"]-5))
+        window.blit(destroyed_goal_sprite, (goal_destroyed["x"], goal_destroyed["y"]))
+        window.blit(mine_sprite, (mine["x"]-5, mine["y"]-5))
 
     frame += 1
     pygame.display.flip()
@@ -848,8 +837,9 @@ TODO improve the visual effects
 TODO add enemy variety
 TODO add background stains (when enemies get killed, goals destroyed, dashes dashed etc.) # Crazy
 TODO balance the grenades (or replace them with other projectiles)
-TODO add more weaponry (perhaps shotguns)
+TODO add more weaponry (perhaps lasers)
 TODO fix floater texts destroying the fps
+TODO make the fuel ball better somehow also bring back the old style thingities it had im not doing that today 💀
 ------------------------------------
 DOING add a bossfight (fish boss real)
 DOING add variety to gameplay (somehow idk) 
