@@ -14,7 +14,7 @@ pygame.mixer.init()
 music = pygame.mixer.music
 sound = pygame.mixer.Sound
 
-WIDTH, HEIGHT = 1280, 720
+WIDTH, HEIGHT = 1024, 768
 
 class Ball:
     def __init__(self, is_player: bool = False, radius: int = 6, ball_active_sprite: pygame.surface = None, ball_non_active_sprite: pygame.surface = None, initial_location: tuple = (1280/2, 720/2), fuel: float = 30, iframes: int = 0, align_with_velocity: bool = False):
@@ -22,10 +22,10 @@ class Ball:
         self.y = initial_location[1]
         self.PygameEvents = []
         self.iframes_left = 0
-        self.gravity = 0.2
+        self.gravity = 0.4
         self.total_vel = 0
-        self.y_acc = 0.75
-        self.x_acc = 1/3
+        self.y_acc = 1
+        self.x_acc = 0.4
         self.x_vel = 0
         self.y_vel = 0
         self.accelerating = True
@@ -77,10 +77,9 @@ class Ball:
                 sfx_bounce.play()
 
     def respawn(self):
-        global max_enemy_fuel, score, enemy_list, max_enemy_timer
+        global score, enemy_list, max_enemy_timer
         enemy_list = []
-        max_enemy_timer = 4
-        max_enemy_fuel = 5
+        max_enemy_timer = 3
         self.y = HEIGHT/2
         self.x = WIDTH/2
         self.fuel = 30
@@ -125,12 +124,7 @@ class Ball:
             elif event.type == pygame.KEYDOWN and event.key == (pygame.K_MINUS):
                 user_fps -= 6
 
-            # # TODO: REMOVE THIS!!! DEBUG
-            elif event.type == pygame.KEYDOWN and event.key == (pygame.K_f):
-                fish_boss = Enemy(False, 50, fish_sprite, fish_sprite, fuel=100, initial_location=(WIDTH//2, HEIGHT//2), speed_multiplier=3, align_with_velocity=True)
-                enemy_list.append(fish_boss)
-
-            # music switcher (very cool)
+            # music switcher (very cool) #TODO add new musics some of these fuckign suck lamo
             elif event.type == pygame.KEYDOWN and event.key == (pygame.K_1):
                 music.unload()
                 music.load("assets/sfx/Lethal company boombox song 5.mp3")
@@ -228,6 +222,7 @@ class Ball:
             pygame.mixer.music.stop()
     
     def update(self):
+        self.fuel += 0.01
         self.check_collision()
         if self.is_player:
             self.handle_movement()
@@ -261,26 +256,14 @@ class Enemy(Ball):
         self.tag = tag
 
     def update_enemy(self):
-        global max_enemy_fuel, max_enemy_timer
+        global score, enemy_list, last_kill_time, combo_timeout, combo_multiplier, max_enemy_timer
         self.update()
-        global score, max_enemy_fuel, enemy_list, last_kill_time, combo_timeout, combo_multiplier
-        self.fuel -= 1/60
-        if self.fuel <= 0:
-            self.accelerating = True
-            if self.alive == True:
-                create_particles(None, 8, {"x": self.x, "y": self.y}, 4, 0, (20, 52, 100), 50, 5)
-                sfx_enemydead.play()
-                self.accelerating = False
-                self.alive = False
-                score += 107
-                floating_text_list.append({"text": "+107", "size": 20, "duration": frame + 120, "position": (playerball.x, playerball.y), "color": (160, 80, 80)})
-                enemy_killed(self.tag)
-                scoreboard_list.append(["Slaughtered +107", 0, (160, 80, 80)])
         
         if ((abs(playerball.x - self.x) < playerball.radius + self.radius) and (abs(playerball.y - self.y) < playerball.radius + self.radius) and self.alive) and playerball.iframes_left <= 0:
             enemy_vel = math.sqrt(self.x_vel**2 + self.y_vel**2)
             vel_diff = abs(abs(playerball.total_vel) - abs(enemy_vel))
             if vel_diff > 20 and abs(playerball.total_vel) >= abs(enemy_vel):
+                last_kill_time = time.time()
                 self.alive = False  
                 create_particles(None, 8, {"x": self.x, "y": self.y}, 4, 0, (20, 52, 100), 50, 5)
                 sfx_enemydead.play()
@@ -289,8 +272,8 @@ class Enemy(Ball):
                 playerball.fuel += 12.5
                 score += 399
                 enemy_killed(self.tag)
-                floating_text_list.append({"text": "+399", "size": 20, "duration": frame + 120, "position": (playerball.x, playerball.y), "color": (255, 0, 0)})
-                scoreboard_list.append(["DASHED +399", 0, (255, 0, 0)])
+                floating_text_list.append({"text": "+399", "size": 20, "duration": frame + 120, "position": (playerball.x, playerball.y), "color": (127, 60, 30)})
+                scoreboard_list.append(["DASHED +399", 0, (127, 60, 30)])
 
                 if self.tag == "goal":
                     playerball.fuel += 16.3
@@ -300,21 +283,15 @@ class Enemy(Ball):
                     create_particles("create_subparticles", 7, {"x": self.x, "y": self.y}, 12, 0.02, (255, 255, 0), 20, 6)
                     scoreboard_list.append(["Refuel +242", 0, (180, 180, 0)])
                     random.choice(sfx_explosion_list).play()
-                    max_enemy_fuel *= 1.125
-                    max_enemy_timer *= 0.925
-                    max_enemy_timer += 0.175
+                    max_enemy_timer *= 0.9
 
                 # Combo bombo  NEEDS FIXING
                 if time.time() - last_kill_time <= combo_timeout:
                     combo_multiplier += 1
                     if combo_multiplier >= 2:
-                        scoreboard_list.append([f"Kill combo x{combo_multiplier} {250*combo_multiplier*1.2**combo_multiplier}", 0, (140, 60, 140)])
+                        scoreboard_list.append([f"Kill x{combo_multiplier} {250*combo_multiplier*1.2**combo_multiplier}", 0, (140, 60, 140)])
                         score += 250*combo_multiplier*1.2**combo_multiplier
-                else:
-                    combo_multiplier = 1
-
-                    last_kill_time = time.time()
-
+                    
             elif playerball.iframes <= 0:
                 playerball.fuel = min(playerball.fuel - 4, playerball.fuel / 1.33)
                 if playerball.alive:
@@ -325,10 +302,6 @@ class Enemy(Ball):
                     scoreboard_list.append(["skill issue -91", 0, (50, 50, 50)])
 
                     playerball.iframes = 20
-            else:
-                score += 13
-                scoreboard_list.append(["Ignored +13", 0, (80, 120, 80)])
-                playerball.fuel += math.sqrt(2)/3
 
         if (playerball.x < self.x) and self.alive:
             self.x_vel -= self.x_acc * self.natural_acc
@@ -400,7 +373,7 @@ def update_floatertext():
         if frame > text["duration"]: 
             floating_text_list.pop(i)
         else:
-            fontrender = pygame.font.SysFont("courier", text["size"])
+            fontrender = pygame.font.Font("assets/VCR_OSD_MONO_1.001.ttf", text["size"])
             rend = fontrender.render(text["text"], False, text["color"])
             floating_text_list[i] = text
 
@@ -428,16 +401,16 @@ def particle_update():
         i += 1
 
 def create_enemies():
-    global enemy_timer, max_enemy_fuel, max_enemy_timer
+    global enemy_timer, max_enemy_timer
     enemy_timer -= 1/60
     if enemy_timer <= 0 and playerball.alive:
         sfx_enemyspawn.play()
         enemy_timer = max_enemy_timer
         # enemy_list.append({"x": 500, "y": 500, "x_vel": 0, "y_vel": 0, "x_acc": 0.2, "y_acc": 1/3, "fall_acc": 0.2, "radius": 6, "fuel": round(max_enemy_fuel, 0), "alive": True, "done": False})
         if random.random() > 0.3:
-            enemy_list.append(Enemy(False, fuel=round(max_enemy_fuel, 0), ball_active_sprite=enemy_sprite, ball_non_active_sprite=enemy_dead_sprite, initial_location=(500,500)))
+            enemy_list.append(Enemy(False, 6, enemy_sprite, enemy_dead_sprite, (random.randint(0, WIDTH), random.randint(0, HEIGHT)), 9001, 1, False))
         else:
-            enemy_list.append(Enemy(False, 12, goal_sprite, destroyed_goal_sprite, (500, 500), 999999, 0.3, False, "goal"))
+            enemy_list.append(Enemy(False, 12, goal_sprite, destroyed_goal_sprite, (random.randint(0, WIDTH), random.randint(0, HEIGHT)), 9001, 0.4, False, "goal"))
         
         create_particles(None, 14, {"x": enemy_list[-1].x,  "y": enemy_list[-1].y}, 4, 0, (200, 0, 0), 50, 5)
 
@@ -478,7 +451,7 @@ def check_mine():
                 if time.time() - last_kill_time <= combo_timeout:
                     combo_multiplier += 1
                     if combo_multiplier >= 2:
-                        scoreboard_list.append([f"Kill combo x{combo_multiplier} {250*combo_multiplier*1.2*combo_multiplier}", 0, (140, 80, 140)])
+                        scoreboard_list.append([f"Kill x{combo_multiplier} {250*combo_multiplier*1.2*combo_multiplier}", 0, (140, 80, 140)])
                         score += 250*combo_multiplier*1.2**combo_multiplier
                 else:
                     combo_multiplier = 1
@@ -496,7 +469,7 @@ def check_fps():
     fps = 1/time_delta
     fps_list.append(fps)
     if len(fps_list) > 256: fps_list.pop(0)
-    fps_string = f"time since last frame: {round(time_delta, 3)} ({round(fps, 1)} fps; {round(np.mean(fps_list), 1)} avg; {round(max(fps_list), 1)} max; {round(min(fps_list), 1)} min; {user_fps} current max)"
+    fps_string = f"{round(time_delta*1000, 1)} ms ({round(fps, 1)} ups; {round(np.mean(fps_list), 1)} avg; {round(max(fps_list), 1)} max; {round(min(fps_list), 1)} min; {user_fps} set max)"
     last_fps_check_time = current_time
 
 def load_game() -> None:
@@ -545,7 +518,7 @@ def update_scoreboard():
             scoreboard_list.pop(i)
 
         text = default_font.render(item[0], False, item[2])
-        window.blit(text, (WIDTH-230, 95 + 15*i))
+        window.blit(text, (WIDTH-230, 95 + 18*i))
         i += 1
 
 def cycle_user_music():
@@ -661,10 +634,9 @@ show_floating_text_for = 0
 last_fps_check_time = 0
 fuel_consumption = 1/240
 combo_multiplier = 1
-max_enemy_timer = 4
-max_enemy_fuel = 5
+max_enemy_timer = 3
 last_kill_time = 0
-combo_timeout = 5
+combo_timeout = 3
 highest_score = 0
 enemy_timer = 1             # Why are these marked as global if they are already global | it works and therefore im not touching it | Bruh | nvm i touched it; do we remove this line or do we keep it for history
 kill_count = 0
@@ -684,7 +656,7 @@ music_path = str(Path.home() / "Music")
 music_files = next(os.walk(music_path), (None, None, []))[2]
 music_files = [file for file in music_files if file.split(".")[-1] in ["mp3", "ogg", "wav"]]
 
-death_text_font = pygame.font.SysFont("courier", 50)
+death_text_font = pygame.font.Font("assets/VCR_OSD_MONO_1.001.ttf", 50)
 respawn_text = death_text_font.render("Dead. Press 'R' to respawn", False, (100, 100, 100))
 
 # Initialize audios
@@ -707,7 +679,7 @@ pygame.mixer.music.load("assets/sfx/GD Stay Inside Me.mp3")
 pygame.mixer.music.play(loops=-1)
 
 clock = pygame.time.Clock()
-default_font = pygame.font.SysFont("Courier", 18)
+default_font = pygame.font.Font("assets/VCR_OSD_MONO_1.001.ttf", 20)
 running = True
 
 load_game()
@@ -729,10 +701,9 @@ while running:
 
         elif event.type == pygame.KEYDOWN and event.key == pygame.K_p:
             paused = not paused
-            fontrender = pygame.font.SysFont("courier", 80)
-            rend = fontrender.render("[ PAUSED ]", False, (100, 100, 100))
+            fontrender = pygame.font.Font("assets/VCR_OSD_MONO_1.001.ttf", 80)
+            rend = fontrender.render("[ PAUSED ]", False, (50, 50, 50))
             window.blit(rend, (WIDTH / 2 - rend.get_width() / 2, HEIGHT / 2 - rend.get_height() / 2))
-
 
         elif event.type == pygame.KEYDOWN and event.key == (pygame.K_t):
             sfx_spongebob.play()
@@ -767,6 +738,9 @@ while running:
         playerball.accelerating = False
         playerball.fuel -= fuel_consumption
 
+        if time.time() - last_kill_time > combo_timeout:
+            combo_multiplier = 1
+
         playerball.iframes -= 1
         pygame.draw.circle(window, (24, 16, 0), (mine["x"], mine["y"]), 100)
         check_fps()
@@ -778,11 +752,11 @@ while running:
         update_floatertext()
         particle_update()
 
-        highscore_text = default_font.render(f"High score: {highest_score}", False, (100,100,100))
-        window.blit(pygame.transform.scale_by(highscore_text, 1.2), (WIDTH-230, 50))
+        highscore_text = default_font.render(f"High score: {int(highest_score)}", False, (100,100,100))
+        window.blit(highscore_text, (min(WIDTH - highscore_text.get_width(), WIDTH - 230), 50))
 
-        score_text = default_font.render(f"Score: {score}", False, (100,100,100))
-        window.blit(pygame.transform.scale_by(score_text, 1.2), (WIDTH-230, 70))
+        score_text = default_font.render(f"Score: {int(score)}", False, (100,100,100))
+        window.blit(score_text, (min(WIDTH - score_text.get_width(), WIDTH - 230), 70))
 
         fps_text = default_font.render(fps_string, False, (255,255,255))
         window.blit(fps_text, (WIDTH/2 - fps_text.get_width()/2, 5))
@@ -797,23 +771,22 @@ while running:
         #                                   ^ you are no longer allowed to make commits /j (or is it (it's not))
 
         strings = [
-             "║║        ║ ╚═╗       ║",
-             '║║[ YELLOW IS FUEL ]  ║',
-             '║║ [ RED ARE THREAT ]═╝',
-             '║╚══[ GOAL:  SURVIVE ]',
-             '║ ',
-            f'╠═[ x ]═[ {int(playerball.x)} ]',
-            f'╠═[ y ]═[ {int(playerball.y)} ]',
-            f'╠═[ k ]═[ {kill_count} ]',
-            f'╠═[ X ]═[ {round(playerball.x_vel, 2)} ]',
-            f'╠═[ Y ]═[ {round(playerball.y_vel, 2)} ]',
-            f'╠═[ i ]═[ {max(playerball.iframes, 0)} ]',
-            f'╠═[ E ]═[ {len(enemy_list)} ]',
-            f'╠═[ e ]═[ {round(enemy_timer, 2)} ]',
-            f'╠═[ m ]═[ {round(max_enemy_fuel, 1)} ]',
-            f'╠═[ M ]═[ {round(max_enemy_timer, 2)} ]',
-            f'╠═[ p ]═[ {len(particle_list)} ]',
-             '╝ '
+             "||        | L,        |",
+             '||[ YELLOW IS FUEL ]  |',
+             '|| [ RED ARE THREAT ]=J',
+             '|  L==[ GOAL:  SURVIVE ]',
+             '| ',
+            f'|=[ x ]=[ {int(playerball.x)} ]',
+            f'|=[ y ]=[ {int(playerball.y)} ]',
+            f'|=[ k ]=[ {kill_count} ]',
+            f'|=[ X ]=[ {round(playerball.x_vel, 2)} ]',
+            f'|=[ Y ]=[ {round(playerball.y_vel, 2)} ]',
+            f'|=[ i ]=[ {max(playerball.iframes, 0)} ]',
+            f'|=[ E ]=[ {len(enemy_list)} ]',
+            f'|=[ e ]=[ {round(enemy_timer, 2)} ]',
+            f'|=[ M ]=[ {round(max_enemy_timer, 2)} ]',
+            f'|=[ p ]=[ {len(particle_list)} ]',
+             'J '
         ]
         for string in strings:
             text = default_font.render(string, False, (100, 100, 100))
@@ -821,6 +794,9 @@ while running:
 
         fuel_string = default_font.render(str(max(round(playerball.fuel, 1), 0.0)), False, (255, 255, 200) if playerball.fuel > 0 else (255, 0, 0))
         window.blit(fuel_string, (WIDTH/2 - fuel_string.get_width()/2, 50))
+
+        combo_string = default_font.render(str(combo_multiplier), False, (140, 80, 140))
+        window.blit(combo_string, (WIDTH/2 - combo_string.get_width()/2, 70))
 
         window.blit(destroyed_goal_sprite, (goal_destroyed["x"], goal_destroyed["y"]))
         window.blit(mine_sprite, (mine["x"]-5, mine["y"]-5))
