@@ -1,17 +1,16 @@
 # racing-ball
-you are a white orb, your task is to survive for as long as possible by collecting fuel (yellow orbs) and avoiding enemies (red orbs) or dashing at them
+this is an early version of the upcoming update, just wanted to share my progress
+so basically you can move around and stuff
+im building up from ground up dw i will add everything back later
+(the only reason im releasing this unfinished version is bc i promised to make an update before summer)
 
-# Controls
+# controls
 <ul>
-    <li>WASD / Arrow keys - Move around</li>
-    <li>Space - Place mine</li>
-    <li>G - Release grenade</li>
-    <li>R - Respawn</li>
-    <li>Left shift - Dash</li>
-    <li>Left control - Slow down</li>
-    <li>- / = keys - Change FPS</li>
-    <li>Number keys - Change Music</li>
+    <li>WASD / arrow keys - move</li>
+    <li>Left shift - dash</li>
+    <li>Left control - stop</li>
+    <li>T - change background</li>
 </ul>
 
-## How to update to the newest github version without cloning
-Run updater.py
+### how to get latest version without going to github
+run updater.py (hopefully it works (idfk if it does 💀💀🎳💀))
