@@ -3,6 +3,7 @@ pygame.init()
 
 
 class Ball:
+    global dt
     def __init__(self, x, y, x_vel, y_vel, x_acc, y_acc, radius, sprite):
         self.x = x
         self.y = y
@@ -16,25 +17,24 @@ class Ball:
     def draw(self):
         window.blit(self.sprite, (self.x - self.radius + shake_offsets["x"], self.y - self.radius + shake_offsets["y"]))
 
-    def handle_movement(self, time_delta):
+    def handle_movement(self, delta_time):
         keys_pressed = pygame.key.get_pressed()
         if keys_pressed[pygame.K_UP] or keys_pressed[pygame.K_w]: 
-            self.y_vel -= self.y_acc * time_delta
+            self.y_vel -= self.y_acc * delta_time
 
         if keys_pressed[pygame.K_DOWN] or keys_pressed[pygame.K_s]: 
-            self.y_vel += self.y_acc * time_delta
+            self.y_vel += self.y_acc * delta_time
 
         if keys_pressed[pygame.K_RIGHT] or keys_pressed[pygame.K_d]: 
-            self.x_vel += self.x_acc * time_delta
+            self.x_vel += self.x_acc * delta_time
 
         if keys_pressed[pygame.K_LEFT] or keys_pressed[pygame.K_a]: 
-            self.x_vel -= self.x_acc * time_delta
+            self.x_vel -= self.x_acc * delta_time
 
         if keys_pressed[pygame.K_LCTRL]:
             self.x_vel = 0
-            self.y_vel = -0.2 * time_delta
+            self.y_vel = -0.2 * delta_time
 
-        # TODO add time_delta to it without causing a ZeroDivisionError
         self.x_vel /= 1.013
         self.y_vel /= 1.013
 
@@ -84,9 +84,8 @@ class Ball:
             self.y = HEIGHT - self.radius
             self.y_vel *= -bounce_factor
 
-    def do_the_things(self):
-        global time_delta
-        self.handle_movement(time_delta)
+    def do_the_things(self, dt):
+        self.handle_movement(dt)
         self.update_pos()
         self.window_collision()
 
@@ -161,7 +160,7 @@ def draw_bg():
             y = row * y_size
             window.blit(drawn_bg, (x, y))
 
-def tick():
+def tick(dt):
     global draw_crosshair_at, mouse_pos, running, events, ticks_done, HEIGHT, WIDTH, ticks_done_in_last_second, tps_timer, tps, drawn_bg
     for event in events:
         if event.type == pygame.QUIT:
@@ -177,8 +176,7 @@ def tick():
             shake_offsets["max"] += 10
 
         if event.type == pygame.KEYDOWN and event.key == pygame.K_q:
-            print("> ", end="")
-            exec(input())
+            exec(input("> "))
 
         if event.type == pygame.KEYDOWN and event.key == pygame.K_LSHIFT:
             player.shift_pressed()
@@ -197,14 +195,14 @@ def tick():
     mouse_pos = pygame.mouse.get_pos()
     draw_crosshair_at = [coordinate - 11.5 for coordinate in list(mouse_pos)]
 
-    player.do_the_things()
+    player.do_the_things(dt)
     do_shake_offsets()
     ticks_done += 1
     ticks_done_in_last_second += 1
-    if current_time - tps_timer > 1:
+    if time.time() - tps_timer > 1:
         tps = f"{ticks_done_in_last_second} tps"
         ticks_done_in_last_second = 0
-        tps_timer = current_time
+        tps_timer = time.time()
 
 def frame():
     global WIDTH, tps, fps, frames_done_in_last_second, fps, fps_timer
@@ -214,12 +212,8 @@ def frame():
     player.draw()
     draw_fg()
     window.blit(spr_crosshair, draw_crosshair_at)
+    fps = f"{round(clock.get_fps())} fps"
 
-    frames_done_in_last_second += 1
-    if current_time - fps_timer > 1:
-        fps = f"{frames_done_in_last_second} fps"
-        frames_done_in_last_second = 0
-        fps_timer = current_time
 
     fps_text = font_default.render(fps, False, GREEN)
     tps_text = font_default.render(tps, False, YELLOW)
@@ -247,6 +241,7 @@ corner_br = fg_corners.image_at((38, 0, 18, 18))
 corner_tr = fg_corners.image_at((57, 0, 18, 18))
 
 # too lazy to write these out every time lmao
+    # use this: pygame.colordict.THECOLORS
 BLACK   = (0,   0,   0)
 RED     = (255, 0,   0)
 GREEN   = (0,   255, 0)
@@ -283,20 +278,15 @@ player = Ball(600, 300, 0, 0, 10, 10, 6, spr_a)
 clock = pygame.time.Clock()
 running = True
 
+dt: float = 1/60
 while running:
     draw_frame_every_n_ticks = round(tickrate / framerate) # a very
     events = pygame.event.get()
-
-    current_time = time.time()
-    time_delta = current_time - last_tick_time
-
-    tick()
-    last_tick_time = current_time
-
+    tick(dt)
     if ticks_done % draw_frame_every_n_ticks == 0:
         frame()
-        last_frame_time = current_time
-
-    clock.tick(tickrate)
+    dt = clock.tick(tickrate)/1000
 
 pygame.quit()
+
+# TODO: Add a TODO
